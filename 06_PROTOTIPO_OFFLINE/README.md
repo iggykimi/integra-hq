@@ -1,0 +1,3 @@
+# Laboratorio offline
+
+Abre `index.html` en un navegador. Es autocontenido: no requiere servidores, Internet, frameworks, modelos, dependencias ni API. Representa una escena SVG conceptual original con cuatro agentes, inspector, timeline, controles de reproducción y eventos sintéticos. **Es un mock histórico del alcance anterior:** el MVP actual tiene 8 roles y aprobación humana; este HTML sirve para validar el contrato visual y el reducer, no como demo final. No usa logo real en la escena. No genera PPTX ni ejecuta IA; su valor es validar la UX. La oficina final deberá usar el renderer y los recursos profesionales elegidos en el spike.

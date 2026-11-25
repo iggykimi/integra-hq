@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "sequence",
+    "timestamp",
+    "type",
+    "project_id",
+    "agent_id",
+    "task_id",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "type": {
+      "enum": [
+        "request.received",
+        "plan.created",
+        "task.assigned",
+        "task.started",
+        "tool.started",
+        "tool.completed",
+        "artifact.created",
+        "task.completed",
+        "task.failed",
+        "task.blocked",
+        "human.message",
+        "approval.required",
+        "approval.resolved",
+        "run.paused",
+        "run.resumed",
+        "project.completed",
+        "project.failed",
+        "project.cancelled"
+      ]
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "enum": [
+        "director",
+        "crm",
+        "consultant",
+        "architect",
+        "offers",
+        "designer",
+        "delivery",
+        "billing",
+        null
+      ]
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

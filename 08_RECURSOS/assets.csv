@@ -1,0 +1,19 @@
+﻿priority,resource,type,license_summary,cost,source_url,usage,redistribution
+P0,Kenney Furniture Kit,3D,CC0,free,https://kenney.nl/assets/furniture-kit,Mobiliario; formatos verificar tras descarga,yes
+P0,Kenney Furniture Kit (OpenGameArt),2D/3D,CC0,free,https://opengameart.org/content/furniture-kit,Renders isometricos cuatro angulos + OBJ,yes
+P0,MrEliptik Office Low Poly,3D,CC0,name your price 0,https://mreliptik.itch.io/office-low-poly-pack,"Monitores, mesas, teclados, impresoras",yes
+P0,KayKit Furniture Bits,3D,CC0 (autor pide no revender sin cambios),free base,https://kaylousberg.itch.io/furniture-bits,"OBJ, FBX, glTF; mobiliario auxiliar",check
+P0,VNB Low Poly 3D Office Set,3D,CC BY 4.0,free base,https://vnbp.itch.io/low-poly-3d-office-set-vnb,Oficina modular; atribucion obligatoria,yes with attribution
+P0,Quaternius Universal Base Characters,3D,CC0,free Standard subset,https://quaternius.com/packs/universalbasecharacters.html,"Rig humanoide, glTF/FBX; vestuario por validar",yes
+P0,Quaternius Universal Animation Library,3D animation,CC0,free Standard only,https://quaternius.itch.io/universal-animation-library,Animaciones locomocion y sentado; typing no confirmado,yes
+P0,Poly Haven,HDRI/textures/models,CC0,free,https://polyhaven.com/,Materiales y luz; licencia https://polyhaven.com/license,yes
+P1,ThirdAngle Office Starter,2D,free custom no standalone redistribution,free,https://thirdangle.itch.io/office-starter,"13 PNG, 2:1; AI-assisted; solo uso permitido",no standalone
+P1,Antahonist Free Office Desk,2D,free custom no asset redistribution,name your price 0,https://antahonist.itch.io/free-office-desk-3d-pixel-art-kit,"36 sprites, 2:1, 32/64/128; AI-assisted code",no standalone
+P1,Mixamo,3D animation,Adobe terms; not CC0,free account,https://www.mixamo.com/,Rig y animacion; verificar distribucion web y retarget,restricted
+P1,OpenGameArt,2D/3D,varies,filter free,https://opengameart.org/,Seleccionar CC0/CC BY y guardar ficha,varies
+P1,Sketchfab,3D,varies,filter downloadable free,https://sketchfab.com/,Solo modelos con licencia compatible; comprobar atribucion,varies
+P1,Fab,3D,varies,filter free,https://www.fab.com/,No asumir redistribucion de GLB; verificar licencia,varies
+P1,Sprite Sheet Maker,tool,check repository license,free,https://extensions.blender.org/add-ons/sprite-sheet-maker/,Blender 5.1+ version revisada; render sprites,tool
+P1,LibreSprite,tool,open source,free,https://libresprite.github.io/,Editor sprite alternativo,tool
+P1,Blender,tool,GPL,free,https://www.blender.org/,"Composicion, GLB y prerender",tool
+P0,Logo Integra color/gris/blanco,branding,marca corporativa; no CC0,public download with permission,https://www.integratecnologia.es/sala-de-prensa-logos,Originales SVG en 08_RECURSOS/brand/; preview con brand-preview.html; permiso para el hackathon; no producto oficial,hackathon; not official

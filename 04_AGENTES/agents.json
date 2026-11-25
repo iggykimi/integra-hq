@@ -1,0 +1,99 @@
+{
+  "agents": [
+    {
+      "id": "director",
+      "name": "Direccion",
+      "role": "Orquestador",
+      "tools": [
+        "plan",
+        "ask_human",
+        "review",
+        "request_approval"
+      ],
+      "workspace": "director",
+      "prompt": "prompts/director.md"
+    },
+    {
+      "id": "crm",
+      "name": "CRM",
+      "role": "Comercial",
+      "tools": [
+        "read_crm",
+        "search_knowledge"
+      ],
+      "workspace": "commercial",
+      "prompt": "prompts/crm.md"
+    },
+    {
+      "id": "consultant",
+      "name": "Consultoria",
+      "role": "Consultor",
+      "tools": [
+        "search_knowledge"
+      ],
+      "workspace": "solutions",
+      "prompt": "prompts/consultant.md"
+    },
+    {
+      "id": "architect",
+      "name": "Data & AI",
+      "role": "Arquitecto",
+      "tools": [
+        "search_knowledge",
+        "generate_architecture"
+      ],
+      "workspace": "solutions",
+      "prompt": "prompts/architect.md"
+    },
+    {
+      "id": "offers",
+      "name": "Ofertas",
+      "role": "Comercial",
+      "tools": [
+        "read_catalog",
+        "build_offer"
+      ],
+      "workspace": "commercial",
+      "prompt": "prompts/offers.md"
+    },
+    {
+      "id": "designer",
+      "name": "Diseno",
+      "role": "Disenador",
+      "tools": [
+        "generate_presentation"
+      ],
+      "workspace": "communication",
+      "prompt": "prompts/designer.md"
+    },
+    {
+      "id": "delivery",
+      "name": "Proyectos",
+      "role": "Entrega",
+      "tools": [
+        "read_projects",
+        "build_project_plan"
+      ],
+      "workspace": "operations",
+      "prompt": "prompts/delivery.md"
+    },
+    {
+      "id": "billing",
+      "name": "Facturacion",
+      "role": "Administracion",
+      "tools": [
+        "read_billing",
+        "build_invoice"
+      ],
+      "workspace": "operations",
+      "prompt": "prompts/billing.md"
+    }
+  ],
+  "defaults": {
+    "external_email": false,
+    "production_access": false,
+    "max_tasks_per_run": 8,
+    "max_concurrent_tasks": 2,
+    "human_approval_required": true
+  }
+}

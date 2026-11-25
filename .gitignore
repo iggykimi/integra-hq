@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+assets-inbox/
+*.log
+.DS_Store
+.playwright-mcp/
+# Consolidación antigua de 4 agentes; no publicar
+DOSSIER_COMPLETO.md

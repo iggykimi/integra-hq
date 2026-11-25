@@ -1,0 +1,66 @@
+{
+  "objective": "Preparar oportunidad, oferta y arranque de proyecto para Nortia Industrial",
+  "assumptions": [
+    "Datos sintéticos de la demo",
+    "Formación incluida por decisión humana",
+    "Precio pendiente de validación comercial"
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "agent": "crm",
+      "instruction": "Leer cuenta, oportunidad, último contacto y pipeline.",
+      "dependsOn": []
+    },
+    {
+      "id": "t2",
+      "agent": "consultant",
+      "instruction": "Analizar requisitos, riesgos y fases.",
+      "dependsOn": []
+    },
+    {
+      "id": "t3",
+      "agent": "architect",
+      "instruction": "Diseñar arquitectura y generar el SVG.",
+      "dependsOn": [
+        "t2"
+      ]
+    },
+    {
+      "id": "t4",
+      "agent": "offers",
+      "instruction": "Generar la oferta DOCX/PDF con catálogo, brief y arquitectura.",
+      "dependsOn": [
+        "t1",
+        "t3"
+      ],
+      "requiresApproval": true
+    },
+    {
+      "id": "t5",
+      "agent": "delivery",
+      "instruction": "Crear el plan de proyecto con hitos y riesgos.",
+      "dependsOn": [
+        "t4"
+      ]
+    },
+    {
+      "id": "t6",
+      "agent": "billing",
+      "instruction": "Generar el borrador de factura y el aging.",
+      "dependsOn": [
+        "t4"
+      ]
+    },
+    {
+      "id": "t7",
+      "agent": "designer",
+      "instruction": "Preparar la presentación de 6 diapositivas.",
+      "dependsOn": [
+        "t4",
+        "t5",
+        "t6"
+      ]
+    }
+  ]
+}

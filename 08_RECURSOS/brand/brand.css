@@ -1,0 +1,260 @@
+/* Integra HQ · tokens y componentes base
+   Extraído de la presentación corporativa y del logo oficial.
+   Causten no se distribuye; la pila usa Poppins/Montserrat como sustitutas. */
+
+:root {
+  --integra-logo-blue: #1d71b8;
+  --integra-logo-teal: #5fb3bc;
+  --integra-logo-mint: #70c4be;
+  --integra-logo-gray: #3c3c3b;
+  --integra-cyan: #00b0f0;
+  --integra-cyan-bright: #43c6f0;
+  --integra-navy: #0b2a5b;
+  --integra-blue-deep: #115293;
+  --integra-blue-bright: #1368de;
+  --integra-purple: #7030a0;
+  --integra-pink: #d70a8a;
+  --integra-white: #ffffff;
+  --integra-surface: #f7fafc;
+  --integra-line: #e8e8e8;
+  --integra-ink: #0b1b2b;
+  --integra-muted: #5b6b7c;
+  --integra-font: "Causten", "Poppins", "Montserrat", "Segoe UI", sans-serif;
+  --integra-shadow: 0 24px 60px rgba(4, 19, 38, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #dfe7ee;
+  color: var(--integra-ink);
+  font-family: var(--integra-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.brand-page {
+  display: grid;
+  gap: 32px;
+  padding: 32px;
+  place-items: center;
+}
+
+.brand-slide {
+  position: relative;
+  width: min(1280px, 100%);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: var(--integra-shadow);
+  background: var(--integra-white);
+}
+
+/* Portada */
+.brand-cover {
+  color: var(--integra-white);
+  background:
+    radial-gradient(circle at 18% 28%, rgba(67, 198, 240, 0.38), transparent 38%),
+    radial-gradient(circle at 12% 88%, rgba(215, 10, 138, 0.22), transparent 36%),
+    radial-gradient(circle at 78% 18%, rgba(112, 196, 190, 0.16), transparent 40%),
+    linear-gradient(135deg, #041424 0%, var(--integra-navy) 48%, #2a163d 100%);
+}
+
+.brand-cover::after {
+  content: "";
+  position: absolute;
+  inset: 7% 8%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+.brand-cover__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 6% 7%;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(150px, 22%, 260px);
+  height: auto;
+}
+
+.brand-cover__copy {
+  max-width: 62%;
+}
+
+.brand-kicker {
+  margin: 0 0 0.6rem;
+  color: var(--integra-cyan-bright);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.brand-cover__tagline {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1rem, 2vw, 1.6rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+.brand-cover__title {
+  margin: 0;
+  font-size: clamp(2.6rem, 6.4vw, 5.6rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+.brand-cover__footer,
+.brand-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--integra-muted);
+  font-size: 0.78rem;
+}
+
+.brand-cover__footer { color: rgba(255, 255, 255, 0.78); }
+
+/* Interior */
+.brand-content {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 3.5%;
+  height: 100%;
+  padding: 5.5% 5.5% 11%;
+}
+
+.brand-content__headline {
+  align-self: start;
+  border-top: 5px solid var(--integra-cyan);
+  border-left: 5px solid var(--integra-cyan);
+  padding: 1.2rem 0 0 1.4rem;
+}
+
+.brand-content__headline h2 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(1.65rem, 3.1vw, 2.65rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
+.brand-content__headline h2 em {
+  color: var(--integra-cyan);
+  font-style: normal;
+}
+
+.brand-content__body {
+  margin: 1rem 0 0;
+  max-width: 46ch;
+  color: var(--integra-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.brand-content__aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.2rem;
+}
+
+.brand-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.brand-stat {
+  padding: 0.72rem 0.85rem;
+  color: var(--integra-white);
+  background: var(--integra-navy);
+}
+
+.brand-stat:nth-child(2) { background: var(--integra-cyan); color: var(--integra-ink); }
+.brand-stat:nth-child(3) { background: var(--integra-purple); }
+.brand-stat:nth-child(4) { background: var(--integra-pink); }
+
+.brand-stat strong {
+  display: block;
+  font-size: clamp(1.3rem, 2.4vw, 1.95rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.brand-stat span {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brand-agents {
+  display: grid;
+  gap: 8px;
+}
+
+.brand-agent {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.52rem 0.7rem;
+  border: 1px solid var(--integra-line);
+  background: var(--integra-surface);
+}
+
+.brand-agent__dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--integra-cyan);
+}
+
+.brand-agent:nth-child(2) .brand-agent__dot { background: var(--integra-logo-teal); }
+.brand-agent:nth-child(3) .brand-agent__dot { background: var(--integra-purple); }
+.brand-agent:nth-child(4) .brand-agent__dot { background: var(--integra-pink); }
+
+.brand-agent strong {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.brand-agent small {
+  display: block;
+  color: var(--integra-muted);
+  font-size: 0.64rem;
+}
+
+.brand-footer {
+  position: absolute;
+  right: 5.5%;
+  bottom: 3.5%;
+  left: 5.5%;
+  border-top: 1px solid var(--integra-line);
+  padding-top: 0.6rem;
+}
+
+.brand-footer img { width: 92px; height: auto; }
+
+@media (max-width: 760px) {
+  .brand-page { padding: 12px; }
+  .brand-content { grid-template-columns: 1fr; gap: 1rem; }
+  .brand-content__headline h2 { max-width: none; }
+  .brand-content__aside { display: none; }
+  .brand-content__body { max-width: none; }
+}

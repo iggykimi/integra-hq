@@ -1,0 +1,89 @@
+{
+  "brand": "Integra",
+  "version": "2026-11-25",
+  "status": "kit interno para el hackathon; no sustituye al manual de marca",
+  "sources": {
+    "logo_color": "https://www.integratecnologia.es/sites/default/files/logo-integra_0.svg",
+    "logo_white": "https://www.integratecnologia.es/sites/default/files/logo-integra-blanco_0.svg",
+    "logo_gray": "https://www.integratecnologia.es/sites/default/files/logo-integra-gris.svg",
+    "corporate_deck": "Integra_Data&AI General 1.pptx, 20/11/2025 (no incluida en el repo)",
+    "proposal_deck": "Propuesta técnica interna, 10/09/2026 (solo referencia de layout; no incluida)"
+  },
+  "color": {
+    "logo": {
+      "blue": { "value": "#1D71B8", "source": "parada inicial del gradiente del logo" },
+      "teal": { "value": "#5FB3BC", "source": "parada media del gradiente del logo" },
+      "mint": { "value": "#70C4BE", "source": "parada final del gradiente del logo" },
+      "gray": { "value": "#3C3C3B", "source": "logo monocromo oficial" }
+    },
+    "digital": {
+      "cyan": { "value": "#00B0F0", "source": "azul cian dominante en la presentación corporativa" },
+      "cyanBright": { "value": "#43C6F0", "source": "cian de acento y titulares" },
+      "navy": { "value": "#0B2A5B", "source": "fondo y titulares oscuros" },
+      "blueDeep": { "value": "#115293", "source": "azul profundo de titulares" },
+      "blueBright": { "value": "#1368DE", "source": "azul de enlace y acento" },
+      "purple": { "value": "#7030A0", "source": "bloque de estadísticas y acento" },
+      "pink": { "value": "#D70A8A", "source": "bloque de personas y acento" }
+    },
+    "neutral": {
+      "white": { "value": "#FFFFFF" },
+      "surface": { "value": "#F7FAFC" },
+      "line": { "value": "#E8E8E8" },
+      "ink": { "value": "#0B1B2B" },
+      "muted": { "value": "#5B6B7C" }
+    }
+  },
+  "typography": {
+    "family": {
+      "value": "Causten",
+      "fallback": ["Poppins", "Montserrat", "Segoe UI", "sans-serif"],
+      "note": "Causten es la tipografía corporativa. No se incluye el archivo ni se redistribuye; Poppins y Montserrat son sustitutas OFL hasta que Marketing facilite la licencia web."
+    },
+    "weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800,
+      "black": 900
+    },
+    "sizes": {
+      "coverKicker": "1.1rem",
+      "coverTitle": "clamp(3rem, 7vw, 5.5rem)",
+      "sectionKicker": "0.85rem",
+      "sectionTitle": "clamp(2rem, 4vw, 3.25rem)",
+      "body": "1rem",
+      "small": "0.8rem",
+      "footer": "0.75rem"
+    },
+    "tracking": {
+      "headline": "-0.02em",
+      "kicker": "0.08em"
+    }
+  },
+  "layout": {
+    "aspect": "16:9",
+    "referenceSlide": "13.333 x 7.5 in",
+    "margin": "48-64 px en 1600 px de ancho",
+    "headlineFrame": "borde cian de 3-4 px en la esquina superior izquierda",
+    "footer": "logo a la izquierda, URL al centro, número de diapositiva a la derecha",
+    "cover": "fondo azul marino/cian con degradado; logo blanco arriba a la izquierda",
+    "interior": "fondo blanco; titular a la izquierda; datos y gráficos a la derecha"
+  },
+  "logo": {
+    "clearSpace": "altura de la 'i' del logotipo",
+    "minWidth": "120 px en pantalla; 30 mm en impresión",
+    "variants": {
+      "color": "logo-integra-color.svg",
+      "white": "logo-integra-blanco.svg",
+      "gray": "logo-integra-gris.svg"
+    },
+    "doNot": [
+      "No deformar, rotar ni recolorear el logotipo.",
+      "No usar el logo blanco sobre fondos claros.",
+      "No recrear el logotipo con una fuente.",
+      "No usar el logo como si el proyecto fuera un producto oficial de Integra."
+    ]
+  }
+}
