@@ -6,15 +6,15 @@ Lee README, alcance, dirección artística y pipelines. Construye únicamente un
 
 ## 2. Backend vertical
 
-Lee contratos, prompts y arquitectura. Implementa API con provider mock y adaptador real configurable. Valida DAG, dependencias, límites y esquemas. No hardcodees el plan live. Ejecuta tareas ready en paralelo y emite eventos ordenados persistidos. No exponer razonamiento, secretos ni datos privados. Implementa pruebas de error, dependencia y idempotencia. No desplegar ni usar credenciales sin autorización.
+Lee contratos (`07_CONTRATOS/`), prompts (`04_AGENTES/prompts/`) y arquitectura (`03_TECNICA/01_ARQUITECTURA.md`). Implementa API Fastify con provider mock y adaptador real configurable para los 8 roles (`director`, `crm`, `consultant`, `architect`, `offers`, `designer`, `delivery`, `billing`). Valida DAG acíclico (máx. 8 tareas), dependencias, límites de concurrencia (máx. 2) y esquemas de salida. No hardcodees el plan live. Implementa pregunta humana de alcance (`human.message`), checkpoint persistente con pausa (`approval.required` + `run.paused`) y reanudación sin repetir tareas (`approval.resolved` + `run.resumed`), con máximo 1 replanificación ante corrección. Permite que `delivery` y `billing` sean deterministas. No exponer razonamiento privado, secretos ni datos reales. Implementa pruebas de error, dependencia, pausa/reanudación e idempotencia. No desplegar ni usar credenciales sin autorización.
 
 ## 3. Documentos
 
-Genera un SVG desde arquitectura estructurada y un PPTX con PptxGenJS a partir de slides validadas. Usa diseño profesional 16:9, máximo seis slides y logo oficial solo si se ha incorporado autorizado. Escapa texto, evita desbordamientos y no inventes información. Abre el archivo para comprobarlo. Emite artifact.created después de guardarlo. No usar código generado por el modelo como ejecutable.
+Genera de forma determinista desde JSON validado: oferta (`offer.docx` + `offer.pdf`, con marca «BORRADOR» y precios estrictamente desde `catalog/services.json`), plan de proyecto (`project_plan.pdf`), borrador de factura (`invoice.pdf`, marcado «BORRADOR · NO CONTABILIZADO»), diagrama SVG sanitizado desde `architecture.json` y presentación PPTX 16:9 (máx. 6 diapositivas) con PptxGenJS desde `slides.json`. Genera DOCX y PDF directamente desde el JSON validado sin depender de LibreOffice en contenedor. Usa el kit de marca de `08_RECURSOS/brand/` solo según permisos registrados. Escapa texto, evita desbordamientos y no inventes cifras. Comprueba apertura real de los archivos. Emite `artifact.created` solo tras guardar con checksum. No ejecutar código generado por el modelo.
 
 ## 4. Integración UI
 
-Integra el renderer elegido y el reducer. Estado derivado de eventos del backend, no temporizadores falsos. Mantén inspector, panel de proyecto y descarga. Modo live/mock/replay visible. Proyección 1080p, teclado, reduced motion. Evita añadir un motor o librería si no aporta valor. Prueba recarga y errores.
+Integra el renderer elegido (5 zonas, 8 roles) y el reducer compartido. Estado derivado exclusivamente de snapshot + eventos del backend, sin temporizadores falsos. Incluye panel de pregunta humana y aprobación/corrección de oferta, inspector de agente (tareas, herramientas, fuentes, artefactos) y descarga de documentos. Modo `LIVE / MOCK / REPLAY` siempre visible. Proyección 1080p, navegación por teclado y `reduced-motion`. Evita añadir un motor o librería si no aporta valor. Prueba recarga, pausa por aprobación y errores.
 
 ## 5. Revisión final
 

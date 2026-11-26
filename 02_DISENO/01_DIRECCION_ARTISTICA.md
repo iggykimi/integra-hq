@@ -49,7 +49,7 @@ Una unidad de trabajo, no plano de sede. Cinco zonas: dirección con pizarra; co
 
 ## Brief de ilustración (fallback)
 
-Ilustración panorámica de oficina tecnológica española, corte arquitectónico, paredes delanteras retiradas, grandes ventanales con celosías terracota, roble claro, escritorios blancos, pantallas negras, mamparas de cristal, vegetación. Cuatro estaciones distinguibles, recepción, reunión y café. Perspectiva dimétrica 2:1, luz de día, paleta consistente, estilo videojuego independiente de alta calidad. Sin personajes, textos, logos generados, interfaz ni botones. Espacio para overlays y personajes; exportar fondo y oclusiones por separado. La escena no es una recreación oficial del edificio.
+Ilustración panorámica de oficina tecnológica española, corte arquitectónico, paredes delanteras retiradas, grandes ventanales con celosías terracota, roble claro, escritorios blancos, pantallas negras, mamparas de cristal, vegetación. Cinco zonas distinguibles (Dirección, Comercial, Soluciones, Comunicación y Operación), recepción, reunión y café. Perspectiva dimétrica 2:1, luz de día, paleta consistente, estilo videojuego independiente de alta calidad. Sin personajes, textos, logos generados, interfaz ni botones. Espacio para overlays y personajes; exportar fondo y oclusiones por separado. La escena no es una recreación oficial del edificio.
 
 ## Animaciones
 

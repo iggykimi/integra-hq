@@ -1,14 +1,30 @@
-# Herramientas de agentes
+# Herramientas de agentes y generación de entregables
 
-| Tool | Entrada | Salida y guardas |
-|---|---|---|
-| search_knowledge | query, categories | Lista de fragmentos con source_id y URL. Búsqueda local, no scraping en directo obligatorio. |
-| generate_architecture | nodos, edges, labels | SVG sanitizado y JSON de arquitectura. Limitar nodos, IDs, conexiones, texto. |
-| generate_presentation | JSON de slides | PPTX válido con plantilla local; validar 5–6 slides, límites de texto y fuentes. |
-| save_artifact | tipo, contenido validado, metadata | id, nombre, MIME, tamaño, checksum y URL autorizada. Nunca aceptar una ruta arbitraria. |
+> Revisión 26/11/2026. Todas las herramientas están tipadas en TypeScript, bajo allowlist por agente y con validación determinista en backend. Ninguna ejecuta código producido por el LLM ni realiza envíos externos.
 
-Director invoca planificación; especialistas reciben contexto seleccionado, no acceso a todo. El backend puede recuperar conocimiento de forma determinista antes de la llamada en lugar de obligar a tool-calling extra. El agente produce especificación, la herramienta materializa el archivo. El diseñador no necesita generar ni ejecutar JavaScript. Un diagrama de arquitectura se compone de nodos/edges con IDs, render por layout determinista. No incrustar SVG externo sin sanitizar. Para PPTX, utilizar 16:9, 5–6 layouts, tamaño texto suficiente, maestros corporativos autorizados y logos SVG válidos. Si no hay permiso de marca, usar plantilla original neutra.
+## Catálogo de herramientas (P0)
 
-Slides: portada; contexto/requisitos; propuesta tecnológica; arquitectura; plan por fases; riesgos y próximos pasos. El briefing y el diagrama son resultados reales del flujo. No inventar precios ni cifras de cliente; etiquetar supuestos y dependencias. Si se requiere una estimación, dejar rango justificado como propuesta, nunca tarifa oficial.
+| Tool | Agente(s) | Entrada | Salida y guardas |
+|---|---|---|---|
+| `ask_human` | `director` | pregunta, opciones, `task_id` | Emite `human.message` y pausa hasta respuesta; modifica el plan sin bucles abiertos. |
+| `request_approval` | `director` | `task_id`, `artifact_id`, resumen | Emite `approval.required` + `run.paused`; detiene consumo de tokens hasta `POST /api/projects/:id/human`. |
+| `read_crm` | `crm` | `account_id`, `as_of` | Lee fixture `crm/accounts.json`, calcula `last_contact_days` y `stale` en código; solo lectura y restringido a la cuenta solicitada. |
+| `search_knowledge` | `crm`, `consultant`, `architect` | `query`, `categories` | Fragmentos de `04_AGENTES/knowledge/*.md` con `source_id` y URL. Local, sin scraping en directo. |
+| `generate_architecture` | `architect` | `architecture.json` (nodos, edges) | Valida contra `architecture.schema.json` (máx. 10 nodos, 15 enlaces), aplica layout determinista y escapa XML/SVG; sin scripts embebidos. |
+| `read_catalog` | `offers` | `service_ids` o categorías | Lee `catalog/services.json` con bandas aprobadas; impide tarifas libres o inventadas. |
+| `build_offer` | `offers` | `offer.json` validado | Verifica `service_id` + `price_band` contra catálogo y genera `offer.docx` + `offer.pdf` con marca «BORRADOR» y kit de marca autorizado. |
+| `read_projects` | `delivery` | `account_id`, `as_of` | Lee `projects/portfolio.json` (hitos, horas, riesgos); solo lectura. |
+| `build_project_plan` | `delivery` | `project_plan.json` validado | Genera `project_plan.pdf` determinista con fases alineadas a la oferta aprobada; no asigna empleados reales. |
+| `read_billing` | `billing` | `account_id`, `as_of` | Lee `billing/invoices.json` y calcula aging y discrepancias en código. |
+| `build_invoice` | `billing` | `billing_report.json` validado | Genera `invoice.pdf` determinista marcado «BORRADOR · NO CONTABILIZADO»; bloquea emisión si hay discrepancia de contrato/hito. |
+| `generate_presentation` | `designer` | `slides.json` validado | Genera PPTX 16:9 (máx. 6 diapositivas) con PptxGenJS y maestro local; sin ejecutar JS del modelo. |
+| `save_artifact` | backend | tipo, contenido validado, metadata | Persiste archivo con ID generado por servidor, MIME, tamaño, SHA-256 y ruta autorizada; emite `artifact.created` solo tras escritura confirmada. |
 
-Referencia: [PptxGenJS](https://github.com/gitbrent/PptxGenJS). Genera archivos OOXML sin PowerPoint instalado. Verificar apertura en PowerPoint/LibreOffice. No confundir el JSON de fixture con una presentación generada de verdad.
+## Principios de ejecución y documentos
+
+- **Contexto mínimo:** el director invoca planificación; cada especialista recibe solo las entradas y salidas de sus dependencias. El backend puede inyectar conocimiento determinista antes de la llamada LLM para evitar round-trips innecesarios.
+- **Separación especificación → archivo:** el agente devuelve JSON validado contra `07_CONTRATOS/*.schema.json`; la herramienta materializa el documento desde plantillas locales.
+- **DOCX y PDF sin dependencias pesadas:** en lugar de depender de LibreOffice en contenedor para convertir DOCX → PDF, generar `offer.docx` (p. ej. librería `docx` en Node) y `offer.pdf` (`pdfmake`/`pdf-lib` o render HTML→PDF controlado) en paralelo desde el mismo `offer.json` validado. Esto reduce latencia, tamaño de imagen Docker y fallos de formato en Azure.
+- **Diagrama SVG:** layout determinista a partir de `nodes`/`edges` con IDs validados y texto escapado. No incrustar SVG externo sin sanitizar.
+- **Presentación PPTX:** formato 16:9, 5–6 layouts (`cover`, `context`, `solution`, `architecture`, `roadmap`, `risks`), tamaño de texto legible en proyección, paleta de `08_RECURSOS/brand/` y logo SVG autorizado. Generación sin PowerPoint instalado mediante [PptxGenJS](https://github.com/gitbrent/PptxGenJS); comprobar apertura en PowerPoint y LibreOffice.
+- **Sin cifras inventadas:** precios siempre como banda de catálogo marcada «pendiente de validación comercial»; fechas, días sin contacto y aging calculados en código contra `as_of`. No confundir fixtures JSON con entregables finales.

@@ -6,11 +6,11 @@
 |---|---|---|
 | 0:00–0:15 | Intro y oficina; 5 zonas, 8 roles | «Una dirección, un equipo de especialistas digitales.» |
 | 0:15–0:35 | Señal de oportunidad en CRM; petición en la UI | «No empieza en un chat: empieza en una señal de negocio.» |
-| 0:35–0:55 | Plan del director; CRM y Consultoría en paralelo | «El director decide quién interviene y qué depende de qué.» |
-| 0:55–1:10 | El director pregunta: «¿Incluimos formación?»; la persona responde | «La persona no solo aprueba: decide el alcance.» |
-| 1:10–1:25 | Arquitectura y oferta; la oficina muestra espera y trabajo | «Los especialistas usan datos y reglas, no solo prompt.» |
+| 0:35–0:50 | El director pregunta: «¿Incluimos formación?»; la persona responde | «La persona no solo aprueba: decide el alcance antes de planificar.» |
+| 0:50–1:10 | Plan JSON validado; CRM y Consultoría en paralelo | «El director decide quién interviene y qué depende de qué.» |
+| 1:10–1:25 | Arquitectura (SVG) y oferta (DOCX/PDF); la oficina muestra espera y trabajo | «Los especialistas usan datos y reglas, no solo prompt.» |
 | 1:25–1:40 | Oferta DOCX/PDF; aprobación humana; la ejecución se pausa | «Nada sale al cliente sin una persona.» |
-| 1:40–2:10 | Proyecto y borrador de factura; entrega y facturación | «La empresa agéntica no termina en la propuesta: sigue el ciclo.» |
+| 1:40–2:10 | Reanudación; Proyecto y borrador de factura en paralelo | «La empresa agéntica no termina en la propuesta: sigue el ciclo.» |
 | 2:10–2:30 | Presentación PPTX y documentos abiertos | «Los resultados son reales, editables y trazables.» |
 | 2:30–3:00 | Inspector, eventos y cierre | «La oficina no es una película: es el estado del trabajo.» |
 
