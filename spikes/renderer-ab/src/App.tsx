@@ -39,6 +39,8 @@ export function App() {
   const [pixelatedA, setPixelatedA] = useState<boolean>(false);
   const [orbitB, setOrbitB] = useState<boolean>(false);
   const [showCommentsB, setShowCommentsB] = useState<boolean>(true);
+  const [walkTriggerB, setWalkTriggerB] = useState<number>(0);
+  const [isWalkingB, setIsWalkingB] = useState<boolean>(false);
   const [sideTab, setSideTab] = useState<SideTab>('inspector');
   const [metricsA, setMetricsA] = useState<RendererMetrics>({
     fps: 0,
@@ -310,7 +312,16 @@ export function App() {
                       Diorama low-poly + CanvasTexture en monitores · listo para GLB CC0/CC BY
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={isWalkingB}
+                      onClick={() => setWalkTriggerB((n) => n + 1)}
+                      style={{ padding: '5px 10px', fontSize: 12 }}
+                    >
+                      {isWalkingB ? 'Caminando…' : 'Probar caminar (pizarra)'}
+                    </button>
                     <label style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <input
                         type="checkbox"
@@ -325,7 +336,7 @@ export function App() {
                         checked={orbitB}
                         onChange={(e) => setOrbitB(e.target.checked)}
                       />
-                      Permitir órbita
+                      Órbita
                     </label>
                   </div>
                 </div>
@@ -334,6 +345,8 @@ export function App() {
                   scene={scene}
                   allowOrbit={orbitB}
                   showComments={showCommentsB}
+                  walkTrigger={walkTriggerB}
+                  onWalkStatusChange={setIsWalkingB}
                   onSelect={() => {
                     setSelected(true);
                     setSideTab('inspector');

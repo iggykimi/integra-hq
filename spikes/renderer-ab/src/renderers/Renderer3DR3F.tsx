@@ -17,8 +17,10 @@ interface Renderer3DProps {
   scene: DeskSceneState;
   allowOrbit: boolean;
   showComments: boolean;
+  walkTrigger: number;
   onSelect: () => void;
   onQuickAction?: (action: 'approve' | 'correct') => void;
+  onWalkStatusChange?: (walking: boolean) => void;
   onMetrics: (metrics: RendererMetrics) => void;
 }
 
@@ -50,6 +52,43 @@ function createOakFloorTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+function createWhiteboardTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 160;
+  const ctx = c.getContext('2d')!;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, 256, 160);
+  ctx.fillStyle = '#0B2A5B';
+  ctx.fillRect(0, 0, 256, 26);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 12px sans-serif';
+  ctx.fillText('PLAN DAG · NORTIA INDUSTRIAL', 12, 17);
+
+  // Mini sticky notes & arrows representing the 8-agent workflow
+  const cards: Array<[number, number, string, string]> = [
+    [16, 42, '#00B0F0', 'CRM + Cons.'],
+    [98, 42, '#115293', 'Arq. SVG'],
+    [180, 42, '#D5A13D', 'Oferta ✓'],
+    [56, 98, '#36966C', 'Proy. + Fact.'],
+    [152, 98, '#7030A0', 'PPTX 6s'],
+  ];
+  for (const [x, y, color, text] of cards) {
+    ctx.fillStyle = `${color}22`;
+    ctx.fillRect(x, y, 64, 34);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, 64, 34);
+    ctx.fillStyle = '#0B1B2B';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText(text, x + 5, y + 20);
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function drawMonitorScreen(
   ctx: CanvasRenderingContext2D,
   scene: DeskSceneState,
@@ -71,7 +110,6 @@ function drawMonitorScreen(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, 256, 160);
 
-  // Top bar
   ctx.fillStyle = meta.screenAccent;
   ctx.fillRect(0, 0, 256, 24);
   ctx.fillStyle = '#FFFFFF';
@@ -87,7 +125,6 @@ function drawMonitorScreen(
   ctx.fillText(`${meta.icon} ${meta.label}`, 12, 48);
 
   if (scene.state === 'waiting') {
-    // Checkpoint pause card
     ctx.fillStyle = 'rgba(213, 161, 61, 0.22)';
     ctx.fillRect(14, 62, 228, 82);
     ctx.strokeStyle = '#D5A13D';
@@ -117,7 +154,6 @@ function drawMonitorScreen(
   }
 
   if (isRight) {
-    // Document / offer / deliverable live preview
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fillRect(14, 60, 228, 86);
     ctx.fillStyle = meta.screenAccent;
@@ -138,7 +174,6 @@ function drawMonitorScreen(
       ctx.fillText('✓ VALIDADO', 171, 132);
     }
   } else {
-    // Mini architecture / workflow nodes with live pulse
     const nodes: Array<[number, number, number, number]> = [
       [22, 68, 60, 26],
       [98, 68, 60, 26],
@@ -194,97 +229,253 @@ function MetricsProbe({ onMetrics }: { onMetrics: (m: RendererMetrics) => void }
   return null;
 }
 
+function lerpAngle(current: number, target: number, alpha: number): number {
+  let diff = target - current;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return current + diff * alpha;
+}
+
+type WalkPhase = 'seated' | 'to_exit' | 'to_board' | 'at_board' | 'to_return' | 'to_seat';
+
+const SEAT_POS = new THREE.Vector3(0.08, 0, 0.58);
+const EXIT_POS = new THREE.Vector3(0.92, 0, 1.05);
+const BOARD_POS = new THREE.Vector3(-1.45, 0, 1.15);
+
 /**
- * Stylized rounded low-poly specialist (capsule/sphere silhouette, articulated
- * shoulders/elbows/hands, glasses, hair volume, tailored blazer & shirt collar)
- * with distinct physical posture & props per operational state.
+ * Ergonomic chair (stationary at desk) + independent articulated StylizedSpecialist
+ * that can sit at the desk (with anatomically correct forward-facing arms/elbows)
+ * OR stand up, walk along floor waypoints to check the plan whiteboard, and sit back down.
  */
-function StylizedSpecialist({
+function ChairAndSpecialist({
   scene,
   showComments,
   commentText,
+  walkTrigger,
   onSelect,
   onQuickAction,
+  onWalkStatusChange,
 }: {
   scene: DeskSceneState;
   showComments: boolean;
   commentText: string;
+  walkTrigger: number;
   onSelect: () => void;
   onQuickAction?: (action: 'approve' | 'correct') => void;
+  onWalkStatusChange?: (walking: boolean) => void;
 }) {
-  const seatGroupRef = useRef<THREE.Group>(null);
+  const chairTopRef = useRef<THREE.Group>(null);
+  const agentRootRef = useRef<THREE.Group>(null);
+  const hipsGroupRef = useRef<THREE.Group>(null);
   const torsoGroupRef = useRef<THREE.Group>(null);
   const headGroupRef = useRef<THREE.Group>(null);
+
+  const leftHipRef = useRef<THREE.Group>(null);
+  const rightHipRef = useRef<THREE.Group>(null);
+  const leftKneeRef = useRef<THREE.Group>(null);
+  const rightKneeRef = useRef<THREE.Group>(null);
+
   const leftShoulderRef = useRef<THREE.Group>(null);
   const rightShoulderRef = useRef<THREE.Group>(null);
   const leftForearmRef = useRef<THREE.Group>(null);
   const rightForearmRef = useRef<THREE.Group>(null);
+
   const envelopeRef = useRef<THREE.Group>(null);
   const doneBadgeRef = useRef<THREE.Mesh>(null);
   const errorPrismRef = useRef<THREE.Mesh>(null);
+
+  const walkPhaseRef = useRef<WalkPhase>('seated');
+  const boardPauseRef = useRef<number>(0);
+  const lastTriggerRef = useRef<number>(walkTrigger);
+  const [walkBubbleOverride, setWalkBubbleOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (walkTrigger !== lastTriggerRef.current) {
+      lastTriggerRef.current = walkTrigger;
+      if (walkPhaseRef.current === 'seated') {
+        walkPhaseRef.current = 'to_exit';
+        boardPauseRef.current = 0;
+        setWalkBubbleOverride('Levantándose para revisar el plan DAG en la pizarra…');
+        onWalkStatusChange?.(true);
+      }
+    }
+  }, [walkTrigger, onWalkStatusChange]);
 
   const meta = STATE_META[scene.state];
 
   useFrame(({ clock }, delta) => {
     const t = scene.reducedMotion ? 0 : clock.getElapsedTime();
-    const lerpRate = scene.reducedMotion ? 1 : Math.min(1, delta * 7);
+    const dt = Math.min(delta, 0.05);
+    const lerpRate = scene.reducedMotion ? 1 : Math.min(1, dt * 8);
 
-    // Subtle chair swivel: face monitors when working, slight angle toward viewer when waiting/idle
-    if (seatGroupRef.current) {
-      const targetRotY =
+    const agent = agentRootRef.current;
+    if (!agent) return;
+
+    const phase = walkPhaseRef.current;
+    const isMoving =
+      phase === 'to_exit' ||
+      phase === 'to_board' ||
+      phase === 'to_return' ||
+      phase === 'to_seat';
+    const isStanding = phase !== 'seated';
+
+    // Waypoint locomotion state machine
+    const walkSpeed = 1.45;
+    if (isMoving) {
+      const target =
+        phase === 'to_exit'
+          ? EXIT_POS
+          : phase === 'to_board'
+            ? BOARD_POS
+            : phase === 'to_return'
+              ? EXIT_POS
+              : SEAT_POS;
+
+      const dx = target.x - agent.position.x;
+      const dz = target.z - agent.position.z;
+      const dist = Math.hypot(dx, dz);
+
+      if (dist < 0.06) {
+        agent.position.x = target.x;
+        agent.position.z = target.z;
+        if (phase === 'to_exit') {
+          walkPhaseRef.current = 'to_board';
+        } else if (phase === 'to_board') {
+          walkPhaseRef.current = 'at_board';
+          boardPauseRef.current = 0;
+          setWalkBubbleOverride('Revisando dependencias del plan DAG en pizarra…');
+        } else if (phase === 'to_return') {
+          walkPhaseRef.current = 'to_seat';
+          setWalkBubbleOverride('Volviendo al puesto para continuar…');
+        } else if (phase === 'to_seat') {
+          walkPhaseRef.current = 'seated';
+          setWalkBubbleOverride(null);
+          onWalkStatusChange?.(false);
+        }
+      } else {
+        const step = Math.min(dist, walkSpeed * dt);
+        agent.position.x += (dx / dist) * step;
+        agent.position.z += (dz / dist) * step;
+        // Character faces local -Z: yaw = atan2(-dx, -dz)
+        const targetYaw = Math.atan2(-dx, -dz);
+        agent.rotation.y = lerpAngle(agent.rotation.y, targetYaw, Math.min(1, dt * 10));
+      }
+    } else if (phase === 'at_board') {
+      // Face left wall whiteboard (-X => yaw = +PI/2 because -Z rotated +PI/2 points -X)
+      agent.rotation.y = lerpAngle(agent.rotation.y, Math.PI / 2, lerpRate);
+      boardPauseRef.current += dt;
+      if (boardPauseRef.current >= 2.2) {
+        walkPhaseRef.current = 'to_return';
+        setWalkBubbleOverride('Plan verificado · regresando al escritorio…');
+      }
+    } else {
+      // Seated at chair
+      agent.position.x = THREE.MathUtils.lerp(agent.position.x, SEAT_POS.x, lerpRate);
+      agent.position.z = THREE.MathUtils.lerp(agent.position.z, SEAT_POS.z, lerpRate);
+      const seatYaw =
         scene.state === 'waiting'
           ? 0.42
           : scene.state === 'completed'
-            ? 0.24
+            ? 0.22
             : scene.state === 'idle'
-              ? 0.16
+              ? 0.14
               : scene.state === 'error'
-                ? 0.34
+                ? 0.3
                 : 0;
-      seatGroupRef.current.rotation.y = THREE.MathUtils.lerp(
-        seatGroupRef.current.rotation.y,
-        targetRotY,
+      agent.rotation.y = lerpAngle(agent.rotation.y, seatYaw, lerpRate);
+      if (chairTopRef.current) {
+        chairTopRef.current.rotation.y = lerpAngle(
+          chairTopRef.current.rotation.y,
+          seatYaw,
+          lerpRate
+        );
+      }
+    }
+
+    // Hips height: seated on cushion (0.50) vs standing (0.74) + walk bounce
+    const walkCycle = t * 7.5;
+    if (hipsGroupRef.current) {
+      const bounce = isMoving && !scene.reducedMotion ? Math.abs(Math.sin(walkCycle)) * 0.038 : 0;
+      const breath = !isMoving && !scene.reducedMotion ? Math.sin(t * 2.1) * 0.006 : 0;
+      const targetY = (isStanding ? 0.74 : 0.50) + bounce + breath;
+      hipsGroupRef.current.position.y = THREE.MathUtils.lerp(
+        hipsGroupRef.current.position.y,
+        targetY,
         lerpRate
       );
     }
 
-    // Torso lean & breathing
+    // Legs (right-hand rule around +X for bone along -Y: +theta = FORWARD toward -Z!)
+    if (leftHipRef.current && rightHipRef.current && leftKneeRef.current && rightKneeRef.current) {
+      if (isMoving) {
+        const swing = scene.reducedMotion ? 0 : Math.sin(walkCycle) * 0.52;
+        leftHipRef.current.rotation.x = THREE.MathUtils.lerp(leftHipRef.current.rotation.x, swing, 0.35);
+        rightHipRef.current.rotation.x = THREE.MathUtils.lerp(rightHipRef.current.rotation.x, -swing, 0.35);
+        // Natural backward knee bend (< 0 in local -Y frame!)
+        leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(
+          leftKneeRef.current.rotation.x,
+          -Math.max(0, -swing) * 0.85 - 0.06,
+          0.35
+        );
+        rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(
+          rightKneeRef.current.rotation.x,
+          -Math.max(0, swing) * 0.85 - 0.06,
+          0.35
+        );
+      } else if (phase === 'at_board') {
+        leftHipRef.current.rotation.x = THREE.MathUtils.lerp(leftHipRef.current.rotation.x, 0, lerpRate);
+        rightHipRef.current.rotation.x = THREE.MathUtils.lerp(rightHipRef.current.rotation.x, 0, lerpRate);
+        leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(leftKneeRef.current.rotation.x, 0, lerpRate);
+        rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(rightKneeRef.current.rotation.x, 0, lerpRate);
+      } else {
+        // Seated: thighs forward (+PI/2), calves straight down (-PI/2)
+        leftHipRef.current.rotation.x = THREE.MathUtils.lerp(leftHipRef.current.rotation.x, Math.PI / 2, lerpRate);
+        rightHipRef.current.rotation.x = THREE.MathUtils.lerp(rightHipRef.current.rotation.x, Math.PI / 2, lerpRate);
+        leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(leftKneeRef.current.rotation.x, -Math.PI / 2, lerpRate);
+        rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(rightKneeRef.current.rotation.x, -Math.PI / 2, lerpRate);
+      }
+    }
+
+    // Torso lean (bone along +Y: -theta = forward toward -Z)
     if (torsoGroupRef.current) {
-      const targetLeanX =
-        scene.state === 'working'
-          ? -0.11
-          : scene.state === 'waiting'
-            ? 0.04
+      const targetLeanX = isMoving
+        ? -0.06
+        : phase === 'at_board'
+          ? -0.04
+          : scene.state === 'working'
+            ? -0.1
             : scene.state === 'completed'
-              ? 0.08
-              : scene.state === 'error'
-                ? 0.1
-                : 0.03;
+              ? 0.05
+              : 0;
       torsoGroupRef.current.rotation.x = THREE.MathUtils.lerp(
         torsoGroupRef.current.rotation.x,
         targetLeanX,
         lerpRate
       );
-      torsoGroupRef.current.position.y =
-        0.54 + (scene.reducedMotion ? 0 : Math.sin(t * 2.1) * 0.008);
     }
 
-    // Head glances between dual monitors when working; looks toward user when waiting
+    // Head glances & nods (front is -Z: -theta tilts chin down toward desk, +theta looks up)
     if (headGroupRef.current) {
       const targetHeadY =
-        scene.state === 'working' && !scene.reducedMotion
-          ? Math.sin(t * 1.35) * 0.26
-          : scene.state === 'waiting'
-            ? 0.18
-            : scene.state === 'error' && !scene.reducedMotion
-              ? Math.sin(t * 5) * 0.12
-              : 0;
+        isMoving
+          ? 0
+          : phase === 'at_board' && !scene.reducedMotion
+            ? Math.sin(t * 2.2) * 0.25
+            : scene.state === 'working' && !scene.reducedMotion
+              ? Math.sin(t * 1.4) * 0.26
+              : scene.state === 'waiting'
+                ? 0.2
+                : scene.state === 'error' && !scene.reducedMotion
+                  ? Math.sin(t * 5) * 0.14
+                  : 0;
       const targetHeadX =
-        scene.state === 'working'
-          ? 0.12
-          : scene.state === 'completed' && !scene.reducedMotion
-            ? Math.sin(t * 3.2) * 0.09
-            : -0.02;
+        phase === 'at_board'
+          ? 0.14
+          : !isStanding && scene.state === 'working'
+            ? -0.1
+            : !isStanding && scene.state === 'completed' && !scene.reducedMotion
+              ? Math.sin(t * 3.2) * 0.08
+              : 0;
       headGroupRef.current.rotation.y = THREE.MathUtils.lerp(
         headGroupRef.current.rotation.y,
         targetHeadY,
@@ -297,109 +488,86 @@ function StylizedSpecialist({
       );
     }
 
-    // Articulated arms & typing / envelope holding / stop gestures
+    // Arms & Elbows (bone along -Y: +theta rotates FORWARD toward -Z!)
     if (
       leftShoulderRef.current &&
       rightShoulderRef.current &&
       leftForearmRef.current &&
       rightForearmRef.current
     ) {
-      if (scene.state === 'working') {
-        const typeL = scene.reducedMotion ? 0 : Math.sin(t * 15) * 0.12;
-        const typeR = scene.reducedMotion ? 0 : Math.sin(t * 15 + 2.4) * 0.12;
+      if (isMoving) {
+        const armSwing = scene.reducedMotion ? 0 : Math.sin(walkCycle) * 0.45;
         leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
           leftShoulderRef.current.rotation.x,
-          -0.62,
-          lerpRate
+          -armSwing,
+          0.35
         );
         rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
           rightShoulderRef.current.rotation.x,
-          -0.62,
-          lerpRate
+          armSwing,
+          0.35
         );
-        leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
-          leftShoulderRef.current.rotation.z,
-          0.14,
-          lerpRate
-        );
-        rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(
-          rightShoulderRef.current.rotation.z,
-          -0.14,
-          lerpRate
-        );
-        leftForearmRef.current.rotation.x = -0.82 + typeL;
-        rightForearmRef.current.rotation.x = -0.82 + typeR;
-      } else if (scene.state === 'waiting') {
-        // Right arm raised presenting the approval envelope
-        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          leftShoulderRef.current.rotation.x,
-          -0.25,
-          lerpRate
-        );
-        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          rightShoulderRef.current.rotation.x,
-          -1.05,
-          lerpRate
-        );
+        leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.z, 0.06, lerpRate);
+        rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.z, -0.06, lerpRate);
+        leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.28, 0.35);
+        rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.28, 0.35);
+      } else if (phase === 'at_board') {
+        // Right hand pointing up at the DAG plan whiteboard
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.15, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 1.35, lerpRate);
         leftShoulderRef.current.rotation.z = 0.08;
-        rightShoulderRef.current.rotation.z = -0.22;
-        leftForearmRef.current.rotation.x = -0.5;
-        rightForearmRef.current.rotation.x =
-          -0.65 + (scene.reducedMotion ? 0 : Math.sin(t * 2.8) * 0.06);
-      } else if (scene.state === 'completed') {
-        // Relaxed celebratory open posture
-        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          leftShoulderRef.current.rotation.x,
-          -0.38,
-          lerpRate
-        );
-        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          rightShoulderRef.current.rotation.x,
-          -0.88,
-          lerpRate
-        );
-        leftShoulderRef.current.rotation.z = 0.16;
-        rightShoulderRef.current.rotation.z = -0.24;
-        leftForearmRef.current.rotation.x = -0.65;
-        rightForearmRef.current.rotation.x = -0.75;
-      } else if (scene.state === 'error') {
-        // Both hands slightly raised in alert/blocked gesture
-        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          leftShoulderRef.current.rotation.x,
-          -0.75,
-          lerpRate
-        );
-        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          rightShoulderRef.current.rotation.x,
-          -0.75,
-          lerpRate
-        );
-        leftShoulderRef.current.rotation.z = 0.28;
-        rightShoulderRef.current.rotation.z = -0.28;
-        leftForearmRef.current.rotation.x = -0.9;
-        rightForearmRef.current.rotation.x = -0.9;
-      } else {
-        // Idle resting on armrests
-        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          leftShoulderRef.current.rotation.x,
-          -0.18,
-          lerpRate
-        );
-        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(
-          rightShoulderRef.current.rotation.x,
-          -0.18,
-          lerpRate
-        );
-        leftShoulderRef.current.rotation.z = 0.1;
         rightShoulderRef.current.rotation.z = -0.1;
-        leftForearmRef.current.rotation.x = -0.88;
-        rightForearmRef.current.rotation.x = -0.88;
+        leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.4, lerpRate);
+        rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.45, lerpRate);
+      } else if (scene.state === 'working') {
+        // Typing cleanly FORWARD over the keyboard!
+        const typeL = scene.reducedMotion ? 0 : Math.sin(t * 15) * 0.11;
+        const typeR = scene.reducedMotion ? 0 : Math.sin(t * 15 + 2.4) * 0.11;
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.62, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.62, lerpRate);
+        leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.z, -0.1, lerpRate);
+        rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.z, 0.1, lerpRate);
+        leftForearmRef.current.rotation.x = 0.88 + typeL;
+        rightForearmRef.current.rotation.x = 0.88 + typeR;
+      } else if (scene.state === 'waiting') {
+        // Right arm extended forward-up holding approval envelope
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.25, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 1.05, lerpRate);
+        leftShoulderRef.current.rotation.z = -0.05;
+        rightShoulderRef.current.rotation.z = -0.18;
+        leftForearmRef.current.rotation.x = 0.55;
+        rightForearmRef.current.rotation.x =
+          0.62 + (scene.reducedMotion ? 0 : Math.sin(t * 2.8) * 0.06);
+      } else if (scene.state === 'completed') {
+        // Right hand raised gently in confirmation
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.28, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.92, lerpRate);
+        leftShoulderRef.current.rotation.z = -0.05;
+        rightShoulderRef.current.rotation.z = -0.18;
+        leftForearmRef.current.rotation.x = 0.62;
+        rightForearmRef.current.rotation.x = 0.72;
+      } else if (scene.state === 'error') {
+        // Both hands raised forward in stop/alert posture
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.85, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.85, lerpRate);
+        leftShoulderRef.current.rotation.z = 0.22;
+        rightShoulderRef.current.rotation.z = -0.22;
+        leftForearmRef.current.rotation.x = 0.82;
+        rightForearmRef.current.rotation.x = 0.82;
+      } else {
+        // Idle relaxed on chair armrests (forward!)
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.22, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.22, lerpRate);
+        leftShoulderRef.current.rotation.z = 0.06;
+        rightShoulderRef.current.rotation.z = -0.06;
+        leftForearmRef.current.rotation.x = 0.88;
+        rightForearmRef.current.rotation.x = 0.88;
       }
     }
 
     if (envelopeRef.current) {
       envelopeRef.current.position.y =
-        1.44 + (scene.reducedMotion ? 0 : Math.sin(t * 2.8) * 0.05);
+        1.32 + (scene.reducedMotion ? 0 : Math.sin(t * 2.8) * 0.045);
       envelopeRef.current.rotation.y = scene.reducedMotion
         ? 0.4
         : Math.sin(t * 1.4) * 0.35 + 0.35;
@@ -412,334 +580,358 @@ function StylizedSpecialist({
     if (errorPrismRef.current) {
       errorPrismRef.current.rotation.y = scene.reducedMotion ? 0.5 : t * 2.2;
       errorPrismRef.current.position.y =
-        1.92 + (scene.reducedMotion ? 0 : Math.sin(t * 4) * 0.04);
+        1.86 + (scene.reducedMotion ? 0 : Math.sin(t * 4) * 0.04);
     }
   });
 
   const skinColor = '#E7B99B';
   const pantsColor = '#243447';
   const shoeColor = '#1B242E';
+  const activeBubbleText = walkBubbleOverride || commentText;
+  const isWalkingNow = walkBubbleOverride !== null;
 
   return (
-    <group
-      position={[0.08, 0, 0.78]}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-    >
-      {/* Selection highlight ring */}
-      {scene.selected && (
-        <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.62, 0.72, 36]} />
-          <meshBasicMaterial color="#00B0F0" />
-        </mesh>
-      )}
-
-      {/* 5-star rolling ergonomic chair base */}
-      <group>
+    <group>
+      {/* Stationary 5-star ergonomic chair at desk */}
+      <group position={[SEAT_POS.x, 0, SEAT_POS.z]}>
         {[0, 1, 2, 3, 4].map((idx) => {
           const angle = (idx * Math.PI * 2) / 5;
           return (
             <group key={idx} rotation={[0, angle, 0]}>
-              <mesh position={[0, 0.07, 0.17]} castShadow>
-                <boxGeometry args={[0.055, 0.04, 0.34]} />
+              <mesh position={[0, 0.07, 0.16]} castShadow>
+                <boxGeometry args={[0.052, 0.038, 0.32]} />
                 <meshStandardMaterial color="#364652" roughness={0.5} metalness={0.35} />
               </mesh>
-              <mesh position={[0, 0.032, 0.32]} castShadow>
-                <cylinderGeometry args={[0.032, 0.032, 0.035, 10]} />
+              <mesh position={[0, 0.03, 0.3]} castShadow>
+                <cylinderGeometry args={[0.03, 0.03, 0.032, 10]} />
                 <meshStandardMaterial color="#1F2933" roughness={0.7} />
               </mesh>
             </group>
           );
         })}
-        <mesh position={[0, 0.26, 0]} castShadow>
-          <cylinderGeometry args={[0.045, 0.055, 0.36, 12]} />
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <cylinderGeometry args={[0.044, 0.052, 0.34, 12]} />
           <meshStandardMaterial color="#4B5D6B" roughness={0.45} metalness={0.4} />
         </mesh>
-      </group>
 
-      {/* Swiveling chair seat + human body */}
-      <group ref={seatGroupRef}>
-        {/* Rounded ergonomic seat cushion */}
-        <mesh position={[0, 0.46, 0.02]} castShadow receiveShadow>
-          <boxGeometry args={[0.56, 0.08, 0.52]} />
-          <meshStandardMaterial color="#2C3E50" roughness={0.78} />
-        </mesh>
-        {/* Contoured mesh backrest + lumbar frame */}
-        <mesh position={[0, 0.88, 0.27]} rotation={[0.08, 0, 0]} castShadow>
-          <boxGeometry args={[0.5, 0.72, 0.065]} />
-          <meshStandardMaterial color="#34495E" roughness={0.75} />
-        </mesh>
-        <mesh position={[0, 0.62, 0.25]} castShadow>
-          <boxGeometry args={[0.14, 0.3, 0.06]} />
-          <meshStandardMaterial color="#253442" roughness={0.6} />
-        </mesh>
-        {/* Chair armrests */}
-        {[-0.3, 0.3].map((ax) => (
-          <group key={ax} position={[ax, 0.58, 0.02]}>
-            <mesh position={[0, 0, 0.04]} castShadow>
-              <boxGeometry args={[0.045, 0.22, 0.05]} />
-              <meshStandardMaterial color="#364652" roughness={0.5} />
-            </mesh>
-            <mesh position={[0, 0.11, -0.02]} castShadow>
-              <boxGeometry args={[0.075, 0.04, 0.3]} />
-              <meshStandardMaterial color="#22303D" roughness={0.7} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* Seated legs: thighs + calves + shoes */}
-        {[-0.125, 0.125].map((lx) => (
-          <group key={lx}>
-            {/* Thigh */}
-            <mesh position={[lx, 0.53, -0.15]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <capsuleGeometry args={[0.078, 0.26, 6, 12]} />
-              <meshStandardMaterial color={pantsColor} roughness={0.8} />
-            </mesh>
-            {/* Calf */}
-            <mesh position={[lx, 0.3, -0.3]} castShadow>
-              <capsuleGeometry args={[0.066, 0.28, 6, 12]} />
-              <meshStandardMaterial color={pantsColor} roughness={0.8} />
-            </mesh>
-            {/* Shoe */}
-            <mesh position={[lx, 0.075, -0.35]} castShadow>
-              <boxGeometry args={[0.12, 0.075, 0.21]} />
-              <meshStandardMaterial color={shoeColor} roughness={0.65} />
-            </mesh>
-          </group>
-        ))}
-
-        {/* Upper body: tailored torso, white shirt V-neck, neck, head, hair, glasses, articulated arms */}
-        <group ref={torsoGroupRef} position={[0, 0.54, 0.02]}>
-          {/* Rounded torso / blazer */}
-          <mesh position={[0, 0.3, 0]} scale={[1.18, 1, 0.78]} castShadow>
-            <capsuleGeometry args={[0.19, 0.3, 8, 16]} />
-            <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+        <group ref={chairTopRef}>
+          <mesh position={[0, 0.44, 0.02]} castShadow receiveShadow>
+            <boxGeometry args={[0.54, 0.075, 0.5]} />
+            <meshStandardMaterial color="#2C3E50" roughness={0.78} />
           </mesh>
-          {/* Crisp white shirt collar peek at chest */}
-          <mesh position={[0, 0.48, -0.13]} rotation={[0.15, 0, 0]}>
-            <coneGeometry args={[0.095, 0.2, 4]} />
-            <meshStandardMaterial color="#F8FAFC" roughness={0.5} />
+          <mesh position={[0, 0.85, 0.26]} rotation={[0.08, 0, 0]} castShadow>
+            <boxGeometry args={[0.48, 0.7, 0.06]} />
+            <meshStandardMaterial color="#34495E" roughness={0.75} />
           </mesh>
-          {/* Neck */}
-          <mesh position={[0, 0.62, 0]} castShadow>
-            <cylinderGeometry args={[0.065, 0.075, 0.12, 12]} />
-            <meshStandardMaterial color={skinColor} roughness={0.72} />
+          <mesh position={[0, 0.6, 0.24]} castShadow>
+            <boxGeometry args={[0.14, 0.28, 0.055]} />
+            <meshStandardMaterial color="#253442" roughness={0.6} />
           </mesh>
-
-          {/* Left articulated arm (shoulder -> upper arm -> elbow -> forearm -> hand) */}
-          <group ref={leftShoulderRef} position={[-0.26, 0.49, 0]}>
-            <mesh position={[0, -0.12, 0]} castShadow>
-              <capsuleGeometry args={[0.058, 0.18, 6, 10]} />
-              <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
-            </mesh>
-            <group ref={leftForearmRef} position={[0, -0.24, 0]}>
-              <mesh position={[0, -0.11, 0]} castShadow>
-                <capsuleGeometry args={[0.048, 0.16, 6, 10]} />
-                <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+          {[-0.29, 0.29].map((ax) => (
+            <group key={ax} position={[ax, 0.56, 0.02]}>
+              <mesh position={[0, 0, 0.04]} castShadow>
+                <boxGeometry args={[0.042, 0.21, 0.046]} />
+                <meshStandardMaterial color="#364652" roughness={0.5} />
               </mesh>
-              <mesh position={[0, -0.22, 0]} castShadow>
-                <sphereGeometry args={[0.052, 10, 10]} />
-                <meshStandardMaterial color={skinColor} roughness={0.72} />
+              <mesh position={[0, 0.105, -0.02]} castShadow>
+                <boxGeometry args={[0.07, 0.036, 0.28]} />
+                <meshStandardMaterial color="#22303D" roughness={0.7} />
               </mesh>
             </group>
-          </group>
-
-          {/* Right articulated arm */}
-          <group ref={rightShoulderRef} position={[0.26, 0.49, 0]}>
-            <mesh position={[0, -0.12, 0]} castShadow>
-              <capsuleGeometry args={[0.058, 0.18, 6, 10]} />
-              <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
-            </mesh>
-            <group ref={rightForearmRef} position={[0, -0.24, 0]}>
-              <mesh position={[0, -0.11, 0]} castShadow>
-                <capsuleGeometry args={[0.048, 0.16, 6, 10]} />
-                <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
-              </mesh>
-              <mesh position={[0, -0.22, 0]} castShadow>
-                <sphereGeometry args={[0.052, 10, 10]} />
-                <meshStandardMaterial color={skinColor} roughness={0.72} />
-              </mesh>
-            </group>
-          </group>
-
-          {/* Stylized sculpted head */}
-          <group ref={headGroupRef} position={[0, 0.8, 0]}>
-            {/* Main cranium (smooth slightly oval sphere) */}
-            <mesh scale={[0.95, 1.04, 0.96]} castShadow>
-              <sphereGeometry args={[0.195, 20, 18]} />
-              <meshStandardMaterial color={skinColor} roughness={0.72} />
-            </mesh>
-            {/* Subtle ears */}
-            <mesh position={[-0.185, -0.01, 0.01]}>
-              <sphereGeometry args={[0.036, 10, 10]} />
-              <meshStandardMaterial color={skinColor} roughness={0.72} />
-            </mesh>
-            <mesh position={[0.185, -0.01, 0.01]}>
-              <sphereGeometry args={[0.036, 10, 10]} />
-              <meshStandardMaterial color={skinColor} roughness={0.72} />
-            </mesh>
-
-            {/* Hair cap + styled side volume + swept fringe */}
-            <mesh position={[0, 0.06, 0.025]} scale={[1.03, 0.9, 1.04]} castShadow>
-              <sphereGeometry args={[0.2, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
-              <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
-            </mesh>
-            <mesh position={[-0.03, 0.15, -0.13]} rotation={[0.2, 0.15, -0.18]} castShadow>
-              <capsuleGeometry args={[0.048, 0.14, 6, 10]} />
-              <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
-            </mesh>
-            <mesh position={[0, 0.01, 0.14]} scale={[1.02, 0.85, 0.65]} castShadow>
-              <sphereGeometry args={[0.175, 14, 12]} />
-              <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
-            </mesh>
-
-            {/* Expressive dark eyes (facing -Z toward monitors) */}
-            <mesh position={[-0.062, 0.01, -0.178]}>
-              <sphereGeometry args={[0.018, 10, 10]} />
-              <meshStandardMaterial color="#18222C" roughness={0.25} />
-            </mesh>
-            <mesh position={[0.062, 0.01, -0.178]}>
-              <sphereGeometry args={[0.018, 10, 10]} />
-              <meshStandardMaterial color="#18222C" roughness={0.25} />
-            </mesh>
-
-            {/* Subtle eyebrows */}
-            <mesh position={[-0.062, 0.05, -0.176]} rotation={[0, 0, scene.state === 'error' ? -0.22 : 0.05]}>
-              <boxGeometry args={[0.048, 0.012, 0.012]} />
-              <meshStandardMaterial color={scene.hairColor} />
-            </mesh>
-            <mesh position={[0.062, 0.05, -0.176]} rotation={[0, 0, scene.state === 'error' ? 0.22 : -0.05]}>
-              <boxGeometry args={[0.048, 0.012, 0.012]} />
-              <meshStandardMaterial color={scene.hairColor} />
-            </mesh>
-
-            {/* Optional subtle glasses for Offers / Architect roles */}
-            {scene.hasGlasses && (
-              <group position={[0, 0.01, -0.19]}>
-                <mesh position={[-0.065, 0, 0]}>
-                  <torusGeometry args={[0.042, 0.007, 8, 18]} />
-                  <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
-                </mesh>
-                <mesh position={[0.065, 0, 0]}>
-                  <torusGeometry args={[0.042, 0.007, 8, 18]} />
-                  <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
-                </mesh>
-                <mesh position={[0, 0.004, 0]}>
-                  <boxGeometry args={[0.045, 0.008, 0.008]} />
-                  <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
-                </mesh>
-              </group>
-            )}
-          </group>
+          ))}
         </group>
       </group>
 
-      {/* Physical 3D state props */}
-      {scene.state === 'waiting' && (
-        <group ref={envelopeRef} position={[0.42, 1.44, -0.18]}>
-          {/* 3D Amber Approval Envelope */}
-          <mesh castShadow>
-            <boxGeometry args={[0.34, 0.22, 0.035]} />
-            <meshStandardMaterial color="#F5D38B" roughness={0.45} />
+      {/* Independent Articulated Specialist Character (sits or walks!) */}
+      <group
+        ref={agentRootRef}
+        position={[SEAT_POS.x, 0, SEAT_POS.z]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+      >
+        {/* Selection ring follows character */}
+        {scene.selected && (
+          <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.52, 0.61, 36]} />
+            <meshBasicMaterial color="#00B0F0" />
           </mesh>
-          <mesh position={[0, 0.02, 0.02]}>
-            <boxGeometry args={[0.28, 0.035, 0.01]} />
-            <meshStandardMaterial color="#D5A13D" />
+        )}
+
+        {/* Pelvis / Hips root */}
+        <group ref={hipsGroupRef} position={[0, 0.50, 0]}>
+          {/* Pelvis block */}
+          <mesh position={[0, 0.02, 0]} scale={[1.1, 0.8, 0.85]} castShadow>
+            <sphereGeometry args={[0.17, 14, 12]} />
+            <meshStandardMaterial color={pantsColor} roughness={0.8} />
           </mesh>
-          <mesh position={[0, -0.04, 0.02]}>
-            <cylinderGeometry args={[0.038, 0.038, 0.015, 16]} />
+
+          {/* Left articulated leg (hip -> thigh -> knee -> calf -> shoe) */}
+          <group ref={leftHipRef} position={[-0.115, 0, 0]}>
+            <mesh position={[0, -0.17, 0]} castShadow>
+              <capsuleGeometry args={[0.072, 0.22, 6, 12]} />
+              <meshStandardMaterial color={pantsColor} roughness={0.8} />
+            </mesh>
+            <group ref={leftKneeRef} position={[0, -0.34, 0]}>
+              <mesh position={[0, -0.16, 0]} castShadow>
+                <capsuleGeometry args={[0.06, 0.22, 6, 12]} />
+                <meshStandardMaterial color={pantsColor} roughness={0.8} />
+              </mesh>
+              <mesh position={[0, -0.34, -0.04]} castShadow>
+                <boxGeometry args={[0.11, 0.07, 0.2]} />
+                <meshStandardMaterial color={shoeColor} roughness={0.65} />
+              </mesh>
+            </group>
+          </group>
+
+          {/* Right articulated leg */}
+          <group ref={rightHipRef} position={[0.115, 0, 0]}>
+            <mesh position={[0, -0.17, 0]} castShadow>
+              <capsuleGeometry args={[0.072, 0.22, 6, 12]} />
+              <meshStandardMaterial color={pantsColor} roughness={0.8} />
+            </mesh>
+            <group ref={rightKneeRef} position={[0, -0.34, 0]}>
+              <mesh position={[0, -0.16, 0]} castShadow>
+                <capsuleGeometry args={[0.06, 0.22, 6, 12]} />
+                <meshStandardMaterial color={pantsColor} roughness={0.8} />
+              </mesh>
+              <mesh position={[0, -0.34, -0.04]} castShadow>
+                <boxGeometry args={[0.11, 0.07, 0.2]} />
+                <meshStandardMaterial color={shoeColor} roughness={0.65} />
+              </mesh>
+            </group>
+          </group>
+
+          {/* Upper body: blazer, white shirt collar, neck, head, articulated arms */}
+          <group ref={torsoGroupRef} position={[0, 0.06, 0]}>
+            <mesh position={[0, 0.29, 0]} scale={[1.18, 1, 0.78]} castShadow>
+              <capsuleGeometry args={[0.185, 0.29, 8, 16]} />
+              <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+            </mesh>
+            <mesh position={[0, 0.47, -0.13]} rotation={[0.15, 0, 0]}>
+              <coneGeometry args={[0.09, 0.19, 4]} />
+              <meshStandardMaterial color="#F8FAFC" roughness={0.5} />
+            </mesh>
+            <mesh position={[0, 0.61, 0]} castShadow>
+              <cylinderGeometry args={[0.062, 0.072, 0.11, 12]} />
+              <meshStandardMaterial color={skinColor} roughness={0.72} />
+            </mesh>
+
+            {/* Left arm */}
+            <group ref={leftShoulderRef} position={[-0.255, 0.48, 0]}>
+              <mesh position={[0, -0.12, 0]} castShadow>
+                <capsuleGeometry args={[0.056, 0.17, 6, 10]} />
+                <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+              </mesh>
+              <group ref={leftForearmRef} position={[0, -0.24, 0]}>
+                <mesh position={[0, -0.11, 0]} castShadow>
+                  <capsuleGeometry args={[0.046, 0.16, 6, 10]} />
+                  <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+                </mesh>
+                <mesh position={[0, -0.22, 0]} castShadow>
+                  <sphereGeometry args={[0.05, 10, 10]} />
+                  <meshStandardMaterial color={skinColor} roughness={0.72} />
+                </mesh>
+              </group>
+            </group>
+
+            {/* Right arm */}
+            <group ref={rightShoulderRef} position={[0.255, 0.48, 0]}>
+              <mesh position={[0, -0.12, 0]} castShadow>
+                <capsuleGeometry args={[0.056, 0.17, 6, 10]} />
+                <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+              </mesh>
+              <group ref={rightForearmRef} position={[0, -0.24, 0]}>
+                <mesh position={[0, -0.11, 0]} castShadow>
+                  <capsuleGeometry args={[0.046, 0.16, 6, 10]} />
+                  <meshStandardMaterial color={scene.jacketColor} roughness={0.68} />
+                </mesh>
+                <mesh position={[0, -0.22, 0]} castShadow>
+                  <sphereGeometry args={[0.05, 10, 10]} />
+                  <meshStandardMaterial color={skinColor} roughness={0.72} />
+                </mesh>
+              </group>
+            </group>
+
+            {/* Head */}
+            <group ref={headGroupRef} position={[0, 0.79, 0]}>
+              <mesh scale={[0.95, 1.04, 0.96]} castShadow>
+                <sphereGeometry args={[0.19, 20, 18]} />
+                <meshStandardMaterial color={skinColor} roughness={0.72} />
+              </mesh>
+              <mesh position={[-0.18, -0.01, 0.01]}>
+                <sphereGeometry args={[0.035, 10, 10]} />
+                <meshStandardMaterial color={skinColor} roughness={0.72} />
+              </mesh>
+              <mesh position={[0.18, -0.01, 0.01]}>
+                <sphereGeometry args={[0.035, 10, 10]} />
+                <meshStandardMaterial color={skinColor} roughness={0.72} />
+              </mesh>
+
+              {/* Hair */}
+              <mesh position={[0, 0.06, 0.025]} scale={[1.03, 0.9, 1.04]} castShadow>
+                <sphereGeometry args={[0.195, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62]} />
+                <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
+              </mesh>
+              <mesh position={[-0.03, 0.145, -0.125]} rotation={[0.2, 0.15, -0.18]} castShadow>
+                <capsuleGeometry args={[0.046, 0.135, 6, 10]} />
+                <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
+              </mesh>
+              <mesh position={[0, 0.01, 0.135]} scale={[1.02, 0.85, 0.65]} castShadow>
+                <sphereGeometry args={[0.17, 14, 12]} />
+                <meshStandardMaterial color={scene.hairColor} roughness={0.82} />
+              </mesh>
+
+              {/* Eyes & Eyebrows */}
+              <mesh position={[-0.06, 0.01, -0.174]}>
+                <sphereGeometry args={[0.017, 10, 10]} />
+                <meshStandardMaterial color="#18222C" roughness={0.25} />
+              </mesh>
+              <mesh position={[0.06, 0.01, -0.174]}>
+                <sphereGeometry args={[0.017, 10, 10]} />
+                <meshStandardMaterial color="#18222C" roughness={0.25} />
+              </mesh>
+              <mesh
+                position={[-0.06, 0.048, -0.172]}
+                rotation={[0, 0, scene.state === 'error' ? -0.22 : 0.05]}
+              >
+                <boxGeometry args={[0.046, 0.011, 0.011]} />
+                <meshStandardMaterial color={scene.hairColor} />
+              </mesh>
+              <mesh
+                position={[0.06, 0.048, -0.172]}
+                rotation={[0, 0, scene.state === 'error' ? 0.22 : -0.05]}
+              >
+                <boxGeometry args={[0.046, 0.011, 0.011]} />
+                <meshStandardMaterial color={scene.hairColor} />
+              </mesh>
+
+              {/* Glasses */}
+              {scene.hasGlasses && (
+                <group position={[0, 0.01, -0.186]}>
+                  <mesh position={[-0.063, 0, 0]}>
+                    <torusGeometry args={[0.04, 0.007, 8, 18]} />
+                    <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
+                  </mesh>
+                  <mesh position={[0.063, 0, 0]}>
+                    <torusGeometry args={[0.04, 0.007, 8, 18]} />
+                    <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
+                  </mesh>
+                  <mesh position={[0, 0.004, 0]}>
+                    <boxGeometry args={[0.042, 0.008, 0.008]} />
+                    <meshStandardMaterial color="#1B2A38" metalness={0.4} roughness={0.4} />
+                  </mesh>
+                </group>
+              )}
+            </group>
+          </group>
+        </group>
+
+        {/* Physical 3D state props anchored to character */}
+        {!isWalkingNow && scene.state === 'waiting' && (
+          <group ref={envelopeRef} position={[0.36, 1.32, -0.34]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.32, 0.21, 0.032]} />
+              <meshStandardMaterial color="#F5D38B" roughness={0.45} />
+            </mesh>
+            <mesh position={[0, 0.02, 0.019]}>
+              <boxGeometry args={[0.26, 0.032, 0.01]} />
+              <meshStandardMaterial color="#D5A13D" />
+            </mesh>
+            <mesh position={[0, -0.038, 0.019]}>
+              <cylinderGeometry args={[0.036, 0.036, 0.014, 16]} />
+              <meshStandardMaterial
+                color="#D5A13D"
+                emissive="#D5A13D"
+                emissiveIntensity={0.4}
+              />
+            </mesh>
+          </group>
+        )}
+
+        {!isWalkingNow && scene.state === 'completed' && (
+          <mesh ref={doneBadgeRef} position={[0.45, 1.62, -0.1]}>
+            <torusGeometry args={[0.1, 0.024, 10, 24]} />
             <meshStandardMaterial
-              color="#D5A13D"
-              emissive="#D5A13D"
+              color="#36966C"
+              emissive="#36966C"
               emissiveIntensity={0.4}
             />
           </mesh>
-        </group>
-      )}
+        )}
 
-      {scene.state === 'completed' && (
-        <mesh ref={doneBadgeRef} position={[0.48, 1.65, 0]}>
-          <torusGeometry args={[0.11, 0.026, 10, 24]} />
-          <meshStandardMaterial
-            color="#36966C"
-            emissive="#36966C"
-            emissiveIntensity={0.4}
-          />
-        </mesh>
-      )}
+        {!isWalkingNow && scene.state === 'error' && (
+          <mesh ref={errorPrismRef} position={[0, 1.86, 0]}>
+            <octahedronGeometry args={[0.13, 0]} />
+            <meshStandardMaterial
+              color="#C94F50"
+              emissive="#C94F50"
+              emissiveIntensity={0.45}
+            />
+          </mesh>
+        )}
 
-      {scene.state === 'error' && (
-        <mesh ref={errorPrismRef} position={[0, 1.92, 0]}>
-          <octahedronGeometry args={[0.14, 0]} />
-          <meshStandardMaterial
-            color="#C94F50"
-            emissive="#C94F50"
-            emissiveIntensity={0.45}
-          />
-        </mesh>
-      )}
-
-      {/* 3D-anchored operational speech/comment bubble */}
-      {showComments && (
-        <Html
-          position={[0.05, 2.02, 0]}
-          center
-          distanceFactor={12}
-          zIndexRange={[10, 0]}
-        >
-          <div
-            className="speech-bubble-3d"
-            style={{ borderTopColor: meta.color }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
+        {/* 3D-anchored operational speech bubble */}
+        {showComments && (
+          <Html
+            position={[0.05, isWalkingNow ? 2.25 : 2.02, 0]}
+            center
+            distanceFactor={12}
+            zIndexRange={[10, 0]}
           >
-            <div className="speech-bubble-header">
-              <span
-                className="state-dot"
-                style={{ background: meta.color }}
-                aria-hidden="true"
-              />
-              <strong>{scene.roleLabel}</strong>
-              {scene.state === 'working' && !scene.reducedMotion && (
-                <span className="typing-dots" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
+            <div
+              className="speech-bubble-3d"
+              style={{ borderTopColor: isWalkingNow ? '#00B0F0' : meta.color }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+            >
+              <div className="speech-bubble-header">
+                <span
+                  className="state-dot"
+                  style={{ background: isWalkingNow ? '#00B0F0' : meta.color }}
+                  aria-hidden="true"
+                />
+                <strong>{scene.roleLabel}</strong>
+                {(isWalkingNow || scene.state === 'working') && !scene.reducedMotion && (
+                  <span className="typing-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                )}
+              </div>
+              <p className="speech-bubble-text">{activeBubbleText}</p>
+              {!isWalkingNow && scene.state === 'waiting' && onQuickAction && (
+                <div className="speech-bubble-actions">
+                  <button
+                    type="button"
+                    className="bubble-btn approve"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickAction('approve');
+                    }}
+                  >
+                    ✓ Aprobar oferta
+                  </button>
+                  <button
+                    type="button"
+                    className="bubble-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuickAction('correct');
+                    }}
+                  >
+                    ↺ Pedir ajuste
+                  </button>
+                </div>
               )}
             </div>
-            <p className="speech-bubble-text">{commentText}</p>
-            {scene.state === 'waiting' && onQuickAction && (
-              <div className="speech-bubble-actions">
-                <button
-                  type="button"
-                  className="bubble-btn approve"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickAction('approve');
-                  }}
-                >
-                  ✓ Aprobar oferta
-                </button>
-                <button
-                  type="button"
-                  className="bubble-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onQuickAction('correct');
-                  }}
-                >
-                  ↺ Pedir ajuste
-                </button>
-              </div>
-            )}
-          </div>
-        </Html>
-      )}
+          </Html>
+        )}
+      </group>
     </group>
   );
 }
@@ -771,11 +963,11 @@ function CoffeeSteam({ active, reducedMotion }: { active: boolean; reducedMotion
 
   return (
     <group>
-      <mesh ref={wisp1} position={[-0.86, 1.0, 0.25]}>
+      <mesh ref={wisp1} position={[-0.86, 1.0, 0.28]}>
         <sphereGeometry args={[0.028, 8, 8]} />
         <meshBasicMaterial color="#FFFFFF" transparent opacity={0.3} />
       </mesh>
-      <mesh ref={wisp2} position={[-0.85, 1.06, 0.25]}>
+      <mesh ref={wisp2} position={[-0.85, 1.06, 0.28]}>
         <sphereGeometry args={[0.022, 8, 8]} />
         <meshBasicMaterial color="#FFFFFF" transparent opacity={0.28} />
       </mesh>
@@ -787,16 +979,21 @@ function DeskDiorama({
   scene,
   showComments,
   commentText,
+  walkTrigger,
   onSelect,
   onQuickAction,
+  onWalkStatusChange,
 }: {
   scene: DeskSceneState;
   showComments: boolean;
   commentText: string;
+  walkTrigger: number;
   onSelect: () => void;
   onQuickAction?: (action: 'approve' | 'correct') => void;
+  onWalkStatusChange?: (walking: boolean) => void;
 }) {
   const oakTex = useMemo(() => createOakFloorTexture(), []);
+  const boardTex = useMemo(() => createWhiteboardTexture(), []);
 
   const leftCanvas = useMemo(() => {
     const c = document.createElement('canvas');
@@ -835,13 +1032,13 @@ function DeskDiorama({
   useEffect(() => {
     return () => {
       oakTex.dispose();
+      boardTex.dispose();
       leftScreenTex.dispose();
       rightScreenTex.dispose();
     };
-  }, [oakTex, leftScreenTex, rightScreenTex]);
+  }, [oakTex, boardTex, leftScreenTex, rightScreenTex]);
 
   useFrame(({ clock }, delta) => {
-    // Animate monitor content cleanly at ~3 Hz while working
     if (scene.state === 'working' && !scene.reducedMotion) {
       const phase = Math.floor(clock.getElapsedTime() * 3);
       if (phase !== lastPhaseRef.current) {
@@ -853,7 +1050,6 @@ function DeskDiorama({
       }
     }
 
-    // Smooth pop-in for physical deliverable folder on desk
     if (deliverableRef.current) {
       const showDoc =
         scene.artifacts.length > 0 ||
@@ -886,14 +1082,32 @@ function DeskDiorama({
         <meshStandardMaterial color="#F2F5F4" roughness={0.9} />
       </mesh>
 
-      {/* Brand signage plaque on left wall */}
-      <mesh position={[-2.27, 1.95, -0.7]}>
-        <boxGeometry args={[0.04, 0.55, 1.45]} />
+      {/* Brand signage plaque on left wall (back section) */}
+      <mesh position={[-2.27, 2.02, -0.9]}>
+        <boxGeometry args={[0.04, 0.48, 1.35]} />
         <meshStandardMaterial color="#FFFFFF" roughness={0.4} />
       </mesh>
-      <mesh position={[-2.24, 1.95, -0.7]}>
-        <boxGeometry args={[0.02, 0.08, 1.15]} />
+      <mesh position={[-2.24, 2.02, -0.9]}>
+        <boxGeometry args={[0.02, 0.08, 1.08]} />
         <meshStandardMaterial color="#00B0F0" roughness={0.35} />
+      </mesh>
+
+      {/* Interactive DAG Plan Whiteboard on left wall (walk destination!) */}
+      <group position={[-2.27, 1.48, 1.15]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.05, 1.05, 1.55]} />
+          <meshStandardMaterial color="#B7C4CE" roughness={0.45} metalness={0.25} />
+        </mesh>
+        <mesh position={[0.03, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry args={[1.45, 0.95]} />
+          <meshStandardMaterial map={boardTex} roughness={0.35} />
+        </mesh>
+      </group>
+
+      {/* Subtle floor waypoint ring in front of whiteboard */}
+      <mesh position={[BOARD_POS.x, 0.012, BOARD_POS.z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.28, 0.34, 24]} />
+        <meshBasicMaterial color="#00B0F0" transparent opacity={0.35} />
       </mesh>
 
       {/* Right panoramic glass wall (#A9C3CC) */}
@@ -936,7 +1150,7 @@ function DeskDiorama({
       </group>
 
       {/* White architectural desk */}
-      <group position={[0.1, 0, -0.15]}>
+      <group position={[0.1, 0, -0.25]}>
         <mesh position={[0, 0.76, 0]} castShadow receiveShadow>
           <boxGeometry args={[2.35, 0.075, 1.15]} />
           <meshStandardMaterial color="#FBFDFC" roughness={0.42} />
@@ -953,22 +1167,22 @@ function DeskDiorama({
           </mesh>
         ))}
 
-        {/* Desk mat, keyboard, mouse */}
-        <mesh position={[-0.04, 0.802, 0.22]} receiveShadow>
+        {/* Desk mat, keyboard (positioned directly under forward hands!), mouse */}
+        <mesh position={[-0.02, 0.802, 0.28]} receiveShadow>
           <boxGeometry args={[1.15, 0.01, 0.42]} />
           <meshStandardMaterial color="#273845" roughness={0.85} />
         </mesh>
-        <mesh position={[-0.1, 0.818, 0.22]} castShadow>
+        <mesh position={[-0.06, 0.818, 0.31]} castShadow>
           <boxGeometry args={[0.58, 0.022, 0.19]} />
           <meshStandardMaterial color="#465A69" roughness={0.55} />
         </mesh>
-        <mesh position={[0.34, 0.816, 0.23]} castShadow>
+        <mesh position={[0.35, 0.816, 0.31]} castShadow>
           <capsuleGeometry args={[0.032, 0.04, 4, 8]} />
           <meshStandardMaterial color="#3B4E5C" roughness={0.5} />
         </mesh>
 
-        {/* Coffee mug + live steam when working */}
-        <mesh position={[-0.86, 0.865, 0.25]} castShadow>
+        {/* Coffee mug + steam */}
+        <mesh position={[-0.86, 0.865, 0.28]} castShadow>
           <cylinderGeometry args={[0.058, 0.052, 0.125, 14]} />
           <meshStandardMaterial color="#0B2A5B" roughness={0.38} />
         </mesh>
@@ -978,7 +1192,7 @@ function DeskDiorama({
         />
 
         {/* Physical deliverable folder + document stack */}
-        <group ref={deliverableRef} position={[0.82, 0.8, 0.16]}>
+        <group ref={deliverableRef} position={[0.82, 0.8, 0.18]}>
           <mesh position={[0, 0.018, 0]} castShadow>
             <boxGeometry args={[0.36, 0.025, 0.44]} />
             <meshStandardMaterial
@@ -1024,13 +1238,15 @@ function DeskDiorama({
         ))}
       </group>
 
-      {/* Upgraded stylized specialist + ergonomic chair + comment bubble */}
-      <StylizedSpecialist
+      {/* Stationary chair + articulated specialist that can sit or walk */}
+      <ChairAndSpecialist
         scene={scene}
         showComments={showComments}
         commentText={commentText}
+        walkTrigger={walkTrigger}
         onSelect={onSelect}
         onQuickAction={onQuickAction}
+        onWalkStatusChange={onWalkStatusChange}
       />
     </group>
   );
@@ -1040,8 +1256,10 @@ export function Renderer3DR3F({
   scene,
   allowOrbit,
   showComments,
+  walkTrigger,
   onSelect,
   onQuickAction,
+  onWalkStatusChange,
   onMetrics,
 }: Renderer3DProps) {
   const [stepIndex, setStepIndex] = useState(0);
@@ -1090,8 +1308,10 @@ export function Renderer3DR3F({
           scene={scene}
           showComments={showComments}
           commentText={commentText}
+          walkTrigger={walkTrigger}
           onSelect={onSelect}
           onQuickAction={onQuickAction}
+          onWalkStatusChange={onWalkStatusChange}
         />
         <ContactShadows
           position={[0, 0.01, 0]}
