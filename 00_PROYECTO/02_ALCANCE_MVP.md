@@ -95,9 +95,9 @@ No se conectan CRM ni ERP reales en el hackathon. No se envían correos ni se co
 
 ## Modelo y despliegue
 
-- **Agentes:** GPT-6.1 (Sol para dirección/arquitectura; Terra para especialistas de alto volumen). Confirmar el deployment exacto del tenant.
-- **Código y diseño:** GPT-6 Luna, por coste y volumen.
-- **Adaptador de proveedor** desde el primer día; no hardcodear el nombre del modelo en los prompts.
+- **Base confirmada (26/11/2026):** **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra (1,1M contexto, baja latencia y coste), válido para arrancar planificación y especialistas sin bloqueos de cuota.
+- **Escalado opcional:** `gpt-6.1-sol` / `gpt-6.2-sol` para dirección o arquitectura si en las pruebas de evaluación el director necesitase mayor capacidad de razonamiento.
+- **Adaptador de proveedor** desde el primer día; no hardcodear el nombre del deployment en los prompts.
 - **Azure:** resource group de Integra, sin crear servicios nuevos hasta comprobar cuota y permisos. Local primero.
 - **Repositorio:** público `integra-hq`, con la marca usada para el hackathon y la nota de que no es un producto oficial.
 

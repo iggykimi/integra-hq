@@ -61,14 +61,14 @@ Ruta prevista: 6–8 llamadas LLM (director, CRM, consultoría, arquitectura, of
 
 ## Modelos de noviembre de 2026
 
-Para agentes: **GPT-6.1 Sol** en dirección y arquitectura; **GPT-6.1 Terra** en especialistas de alto volumen. Para código, diseño y tareas de alto volumen: **GPT-6 Luna**. GPT-6.2 Astra/Sol queda como opción si el tenant lo tiene y la evaluación justifica el coste.
+**Decisión confirmada (26/11/2026):** arrancar sobre **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra como deployment base unificado (baja latencia, 1,1M de contexto y coste contenido para el ciclo de 180 s). Mantener **adaptador de proveedor** por rol para poder asignar **GPT-6.1 Sol** / **GPT-6.2 Sol** a dirección y arquitectura si las pruebas reales lo justifican.
 
 | Modelo | ID de catálogo | Uso |
 |---|---|---|
-| GPT-6.1 Sol | `gpt-6.1-sol` (2026-09-29) | Director, arquitectura, decisiones |
+| GPT-6 Luna | `gpt-6-luna` (2026-09-22) | **Base confirmada MVP** en suscripción Integra (planificación, especialistas, código y diseño) |
+| GPT-6.1 Sol | `gpt-6.1-sol` (2026-09-29) | Upgrade opcional para dirección y arquitectura |
 | GPT-6.1 Terra | `gpt-6.1-terra` (2026-10-26) | Especialistas rápidos, visión y computer use |
-| GPT-6 Luna | `gpt-6-luna` (2026-09-22) | Código, diseño, alto volumen |
-| GPT-6.2 Astra | `gpt-6.2-astra` (2026-11-17) | Opción de máxima calidad si hay cuota |
+| GPT-6.2 Astra / Sol | `gpt-6.2-astra` / `gpt-6.2-sol` (2026-11-17) | Opción de máxima calidad si hay cuota |
 
 Usar el nombre real del deployment del tenant, no asumir que coincide con el identificador del catálogo. Verificar región, cuota, precio, parámetros y latencia. Adaptador de proveedor + mocks. No exigir preview para el MVP. Un modelo local compatible sirve para experimentar, pero no equivale a calidad ni latencia.
 

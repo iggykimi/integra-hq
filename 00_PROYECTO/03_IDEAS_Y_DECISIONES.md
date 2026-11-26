@@ -14,7 +14,7 @@
 | Casos transversales CRM + datos + formación | P0 | Decisión 25/11/2026: la demo cuenta el ciclo completo; CRM, proyectos y facturación entran. |
 | Aprobación humana | P0 | Pausa, reanudación y una corrección controlada. |
 | Oferta, plan y factura en DOCX/PDF | P0 | Documentos reales; el JSON es interno. |
-| GPT-6.1 + GPT-6 Luna | P0 | GPT-6.1 para agentes; Luna para código y diseño. |
+| Azure OpenAI `gpt-6-luna` | P0 (confirmado) | Deployment disponible en la suscripción de Integra; adaptador de proveedor para escalar a Sol si hace falta. |
 | Reunión de dirección a partir de Excel | Backlog | Analítica real, requiere dataset y herramientas adicionales. |
 | Contratación de un agente desde UI | Backlog | Buena metáfora, no necesaria para probar extensibilidad. |
 | Replay/inspector | P1 / P0 inspector | Evidencia y resiliencia. |
@@ -28,7 +28,7 @@
 
 1. Renderer: comparar A/B/C con el mismo escritorio. No decidir por una captura aislada.
 2. Assets: logo oficial y kit de marca; permiso para el hackathon. Resto sin compra, empezar CC0 y registrar licencia.
-3. Modelo: GPT-6.1 Sol/Terra para agentes y GPT-6 Luna para código/diseño; comprobar deployment y cuota en el tenant.
+3. Modelo: confirmado **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra como base de arranque para todos los roles LLM (baja latencia y coste); mantener adaptador de proveedor para poder subir director/arquitecto a `gpt-6.1-sol` o `gpt-6.2-sol` sin tocar prompts.
 4. Hosting: resource group de Integra en Azure si hay permiso; local como contingencia.
 5. Branding: kit oficial en `08_RECURSOS/brand/`; no redibujar el logo ni presentar el proyecto como producto oficial.
 6. Permisos de Outlook y uso de documentación interna: P1; solicitar autorización. La entrada web funciona sin ellos.
