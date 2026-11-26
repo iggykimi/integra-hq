@@ -2,6 +2,8 @@
 
 > Revisión 25/11/2026. La estimación histórica de 26–40 horas-persona queda como **referencia**, no como compromiso: el alcance actual incluye 8 agentes, pausa por aprobación humana, documentos DOCX/PDF y un ciclo completo. Reestimar antes de cerrar fechas.
 
+**Estado 26/11/2026:** `apps/web/` ya cubre la escena visual flagship (28×20 m, 12 cámaras, 8 agentes, campus y replay de 34 eventos), por lo que el ticket 5 queda **parcialmente** cumplido. Siguen pendientes la conexión al backend/SSE real, la persistencia y el ensayo de 180 s.
+
 | Orden | Ticket | Criterio de aceptación |
 |---|---|---|
 | 1 | Contratos de plan, eventos y aprobación | 8 agentes, `requiresApproval`, `human.message`, `run.paused/resumed`; DAG inválido rechazado. |

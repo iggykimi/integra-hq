@@ -1,9 +1,9 @@
 # Integra HQ · Real Hack 2026
-**Dossier de arranque, spike visual 3D y plan de ruta del equipo | 26/11/2026**
+**Dossier de arranque, oficina 3D flagship y plan de ruta del equipo | 26/11/2026**
 
 > Una empresa agéntica real, visible como una oficina 3D viva. Zaragoza, 2029: una interpretación creativa del futuro de Integra.
 
-Este repositorio consolida la investigación, el alcance del MVP, los contratos JSON Schema, los fixtures sintéticos, un **spike interactivo 3D (React Three Fiber)** ya funcional y una **demo CLI mock/live para Azure OpenAI (`gpt-6-luna`)**. Todavía **no** es la aplicación completa desplegada: es la base común para alinearnos como equipo y pasar directamente a construir.
+Este repositorio consolida la investigación, el alcance del MVP, los contratos JSON Schema, los fixtures sintéticos, una **oficina 3D flagship (React Three Fiber)** ejecutable en `apps/web/` —sede DAT Alierta de 28×20 m, 8 especialistas y replay de 34 eventos— y una **demo CLI mock/live para Azure OpenAI (`gpt-6-luna`)**. La escena funciona hoy con **replay mock**; el backend real (`apps/api/`), SSE y LLM en vivo aún no están conectados. No es la aplicación completa desplegada: es la base visual y contractual para pasar a construir.
 
 ---
 
@@ -12,6 +12,7 @@ Este repositorio consolida la investigación, el alcance del MVP, los contratos 
 - **Historia y alcance:** un **ciclo completo de negocio** en **180 segundos** sobre cliente ficticio (**Nortia Industrial**): señal CRM → pregunta humana de alcance → requisitos + arquitectura SVG → oferta DOCX/PDF → **pausa para aprobación humana** → plan de proyecto PDF + borrador de factura PDF → presentación PPTX (6 diapositivas). Incluye un segundo flujo corto (solo arquitectura Microsoft Fabric) para demostrar delegación variable.
 - **Equipo digital:** **1 director + 7 especialistas** (`crm`, `consultant`, `architect`, `offers`, `delivery`, `billing`, `designer`) en **5 zonas** (Dirección, Comercial, Soluciones, Comunicación, Operación). `delivery` y `billing` entran deterministas para garantizar velocidad y fiabilidad.
 - **Renderer elegido (tras spike A vs B):** **3D ortográfico con React Three Fiber + Three.js + Drei** (`spikes/renderer-ab/`), con globos de comentarios operativos en 3D (`<Html>`) y movimiento por waypoints ligado a eventos reales. No se construyen renderers alternativos en paralelo.
+- **Escena principal:** `apps/web/` implementa la sede flagship **DAT Alierta 2029 de 28×20 m** con 12 presets de cámara, 8 agentes, campus exterior, terraza en voladizo, vida simulada y replay de **34 eventos**. El spike `spikes/renderer-ab/` se conserva como evidencia del A/B, no como producto.
 - **Modelo base confirmado:** **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra (1,1M de contexto, baja latencia y coste), tras un adaptador de proveedor que permite subir dirección/arquitectura a `gpt-6.1-sol` o `gpt-6.2-sol` si las pruebas lo piden.
 - **Reglas no negociables:**
   - Sin secretos en el frontend ni en el repositorio; sin conexión a CRM/ERP ni correos reales.
@@ -23,9 +24,17 @@ Este repositorio consolida la investigación, el alcance del MVP, los contratos 
 
 ## 2. Cómo probarlo hoy en local (2 minutos)
 
-Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
+Requisitos: Node LTS (`>=20`). `apps/web` usa npm; el spike histórico usa pnpm.
 
-1. **Ver el spike visual 3D ganador (1 escritorio, comentarios 3D y caminar a pizarra):**
+1. **Abrir la oficina 3D flagship (sede 28×20 m, 12 cámaras y replay de 34 eventos):**
+   ```bash
+   cd apps/web
+   npm install
+   npm run dev
+   ```
+   Abrir **`http://127.0.0.1:5173/`**. Probar los 12 presets, las luces **Día / Atardecer / Guardia IA**, el play del timeline, los checkpoints humanos, los globos smart, la vida simulada y el clic en agentes, pizarras, café o PC 1986.
+
+2. **Ver el spike A/B original (referencia, 1 escritorio):**
    ```bash
    cd spikes/renderer-ab
    pnpm install
@@ -33,7 +42,7 @@ Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
    ```
    Abrir **`http://localhost:5173`** (seleccionar **Solo B (3D R3F)** para verlo a pantalla completa, probar estados, **Esperando aprobación** con botones en el globo y **Probar caminar (pizarra)**).
 
-2. **Probar el flujo de planificación y cálculos deterministas en CLI (sin dependencias):**
+3. **Probar el flujo de planificación y cálculos deterministas en CLI (sin dependencias):**
    ```bash
    # Mock ciclo completo con formación (42.000 € – 58.000 €, 428 h)
    node scripts/demo-luna-plan.mjs
@@ -48,10 +57,19 @@ Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
    node scripts/demo-luna-plan.mjs --live --scenario=arch
    ```
 
-3. **Validar contratos, DAGs, 34 eventos y fixtures sintéticos:**
+4. **Validar contratos, DAGs, 34 eventos y fixtures sintéticos:**
    ```bash
    node scripts/validate-dossier.mjs
    ```
+
+### La escena flagship en detalle
+
+- **Sede:** 28×20 m con atrio a doble altura, escalera, pared corporativa azul con logo Integra y reloj analógico 3D en hora real.
+- **Salas:** Sala Alierta para 8 plazas, Academia Integra reactiva a `includesTraining`, Grada IntegraTalks de roble, 2 cabinas acústicas, Data & AI Server Lab acristalado con 3 racks y Terraza Exterior en voladizo con pérgola cerámica.
+- **Campus:** 4 pabellones tecnológicos, monolito DAT Alierta · INTEGRA, aparcamiento con 4 cargas EV y 3 coches CC0, lámina de agua, carril bici con ciclista, peatones, tráfico y pradera fundida al horizonte con `<fog>`.
+- **Legibilidad:** badges icónicos compactos en Oficina/Campus; al hacer hover, clic, seguir a un agente o activarse un checkpoint se despliega el globo completo.
+- **Rendimiento:** sombras de contacto bakeadas en 1 frame, bloom selectivo, `InstancedMesh` para 180 celosías y 112 módulos de jardín vertical, y 12 presets de cámara en una sola barra a 1080p.
+- **Detalle técnico y límites:** ver `apps/web/README.md`.
 
 ---
 
@@ -61,7 +79,7 @@ Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
 |---|---|---|---|
 | **Fase 0 · Base y decisiones** | Alcance 8 agentes, contratos JSON Schema, fixtures de Nortia Industrial, validación automática, elección de 3D R3F y `gpt-6-luna`. | `07_CONTRATOS/`, `spikes/renderer-ab/`, `scripts/` | **Hecho** |
 | **Fase 1 · Backend vertical + documentos** | API Fastify + orquestador DAG (máx. 8 tareas, concurrencia 2) + checkpoint de pausa/reanudación (`run.paused/resumed`) + adaptador Azure OpenAI `gpt-6-luna` + generadores deterministas DOCX/PDF/SVG/PPTX. | `apps/api/`, `packages/core/`, `packages/documents/` funcionando en `mock` y `live` | **Siguiente** |
-| **Fase 2 · Oficina 3D (5 zonas, 8 roles)** | Evolucionar el spike R3F a 1 planta con 5 zonas, 8 puestos, comentarios operativos 3D, movimiento por waypoints conectado al polling de eventos, panel de pregunta/aprobación e inspector. | `apps/web/` 100% dirigido por eventos reales | Pendiente |
+| **Fase 2 · Oficina 3D (5 zonas, 8 roles)** | Evolucionar el spike R3F a 1 planta con 5 zonas, 8 puestos, comentarios operativos 3D, movimiento por waypoints conectado al polling de eventos, panel de pregunta/aprobación e inspector. | `apps/web/` con sede flagship 28×20 m, 12 cámaras, 8 agentes, campus exterior y replay de 34 eventos. Falta conectar backend/SSE real, aprobación contra API y pruebas táctiles/teclado. | **Parcial** |
 | **Fase 3 · Persistencia, pruebas y ensayo 180 s** | Snapshot + reconexión sin repetir tareas, suite funcional F1–F16 (`05_DESARROLLO/03_PRUEBAS.md`), medición de latencia real con `gpt-6-luna` y grabación de un `replay` real etiquetado. | Demo ensayada de 180 s + contingencia `replay` | Pendiente |
 | **Fase 4 · Despliegue y extras (solo si P0 pasa)** | Azure Container Apps + Blob Storage en Resource Group de Integra (local como contingencia), panel de costes/tokens, easter egg 1986 o trigger Outlook P1. | URL de demo + extras opcionales | Opcional (P1) |
 
@@ -73,8 +91,8 @@ Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
 
 Dejamos aquí los puntos concretos que conviene cerrar entre todos antes de arrancar la Fase 1:
 
-1. **Estilo 3D de personajes y mobiliario (Candidato B):**
-   - ¿Seguimos puliendo el **estilo 3D estilizado propio** del spike (control total en código, peso ligero, cero problemas de rigging/licencias) o dedicamos tiempo a importar **GLB CC0 gratuitos** de `08_RECURSOS/assets.csv` (Kenney/MrEliptik para muebles y Quaternius Standard para personajes)?
+1. **Estilo 3D de personajes y mobiliario (Candidato B, ya implementado):**
+   - La escena `apps/web/` combina **agentes estilizados propios** con **mobiliario CC0 de Kenney**. ¿Mantenemos esta mezcla por velocidad o sustituimos parte del mobiliario por geometría propia antes del cierre?
 2. **Validación real de `gpt-6-luna` como Director:**
    - Al ejecutar `node scripts/demo-luna-plan.mjs --live` con las credenciales de la suscripción de Integra: ¿`gpt-6-luna` devuelve planes DAG impecables en los dos escenarios (ciclo completo y solo Fabric) con latencia cómoda, o conviene subir solo el `director` (o `architect`) a `gpt-6.1-sol` / `gpt-6.2-sol`?
 3. **Catálogo de servicios y plantilla de oferta:**
@@ -108,11 +126,12 @@ Dejamos aquí los puntos concretos que conviene cerrar entre todos antes de arra
 | `06_PROTOTIPO_OFFLINE` | Prototipo HTML SVG histórico de 4 agentes (referencia UX sin dependencias) |
 | `07_CONTRATOS` | 9 JSON Schema Draft 2020-12, `types.ts`, 2 planes DAG, 34 eventos mock y 4 fixtures sintéticos de negocio |
 | `08_RECURSOS` | Catálogo CSV de assets libres, control de licencias y kit oficial de marca (`brand/`) |
+| `apps/web` | Oficina 3D flagship: sede 28×20 m, 12 cámaras, 8 agentes, campus, simulador y replay de 34 eventos (ver `apps/web/README.md`) |
 | `spikes/renderer-ab` | Spike interactivo 1 escritorio (2D vs **3D R3F ganador**, comentarios 3D y caminar por waypoints) |
 | `scripts` | Validador automático (`validate-dossier.mjs`) y demo CLI mock/live (`demo-luna-plan.mjs`) |
 
 ### Qué incluye y qué no
 
-Incluye documentación, contratos, fixtures sintéticos, kit de marca con los 3 SVG oficiales del logo, prototipo offline histórico, spike 3D R3F ejecutable y scripts de validación/demo. **No incluye** secretos, claves, datos de clientes reales, la presentación corporativa completa, fotos de stock, assets de pago ni servicios Azure aprovisionados. «Gratis» se refiere a no comprar assets ni software; el consumo de LLM/Azure depende de la suscripción utilizada.
+Incluye documentación, contratos, fixtures sintéticos, kit de marca con los 3 SVG oficiales del logo, prototipo offline histórico, **oficina 3D flagship ejecutable en `apps/web/`**, spike 3D R3F de referencia y scripts de validación/demo. **No incluye** secretos, claves, datos de clientes reales, la presentación corporativa completa, fotos de stock, assets de pago ni servicios Azure aprovisionados. «Gratis» se refiere a no comprar assets ni software; el consumo de LLM/Azure depende de la suscripción utilizada.
 
 *Última actualización y verificación de fuentes: 26 de noviembre de 2026.*
