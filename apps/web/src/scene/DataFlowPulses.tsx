@@ -98,7 +98,7 @@ export function DataFlowPulses({
   if (!enabled || pulses.length === 0) return null;
 
   const resolvePos = (node: AgentId | 'reception'): Vec2 => {
-    if (node === 'reception') return { x: -6.7, z: 2.8 };
+    if (node === 'reception') return { x: -10.7, z: 3.7 };
     return agentPositions[node] ?? AGENT_PROFILES[node].deskPos;
   };
 

@@ -15,23 +15,29 @@ export type CameraPresetId =
   | 'reception'
   | 'director'
   | 'boardroom'
+  | 'academy'
   | 'commercial'
   | 'solutions'
   | 'communication'
   | 'operations'
-  | 'cafe';
+  | 'cafe'
+  | 'terrace';
 
 export type AgentActivity =
   | 'desk'
   | 'whiteboard'
   | 'reception'
   | 'boardroom'
+  | 'academy'
   | 'coffee'
-  | 'lounge'
+  | 'lounge_sofa'
+  | 'lounge_chair'
+  | 'terrace'
+  | 'phone_booth'
+  | 'auditorium'
   | 'printer'
   | 'arch_board'
   | 'slides_tv'
-  | 'window_view'
   | 'retro_pc'
   | 'garden_chat';
 
@@ -51,13 +57,12 @@ export interface AgentVisualProfile {
   zoneLabel: string;
   accentColor: string;
   deskPos: Vec2;
-  /** Facing angle in radians where 0 faces -Z, +PI/2 faces -X */
+  /** Facing angle in radians where 0 faces -Z */
   deskYaw: number;
   seatPos: Vec2;
   exitPos: Vec2;
   corridorX: number;
   corridorZ: number;
-  /** Boardroom seat index 0..5 */
   boardroomSeatIndex: number;
   appearance: {
     skin: string;
@@ -157,185 +162,222 @@ export const STATE_META: Record<
 
 export const ZONE_META: Record<
   ZoneId,
-  { label: string; color: string; bounds: [number, number, number, number]; tagPos: [number, number, number] }
+  { label: string; color: string; tagPos: [number, number, number] }
 > = {
   director: {
     label: 'Dirección',
     color: '#0B2A5B',
-    bounds: [-8.7, -6.2, -3.5, -1.2],
-    tagPos: [-6.1, 0.02, -1.55],
+    tagPos: [-10.6, 0.02, -2.35],
   },
   commercial: {
     label: 'Comercial',
     color: '#115293',
-    bounds: [-4.6, 1.3, -0.5, 6.1],
-    tagPos: [-2.6, 0.02, 5.85],
+    tagPos: [-4.0, 0.02, 9.2],
   },
   solutions: {
     label: 'Soluciones · Data & AI',
     color: '#00B0F0',
-    bounds: [-0.2, 1.3, 4.3, 6.1],
-    tagPos: [2.0, 0.02, 5.85],
+    tagPos: [2.8, 0.02, 9.2],
   },
   communication: {
     label: 'Comunicación',
     color: '#D70A8A',
-    bounds: [4.6, 1.3, 8.7, 3.6],
-    tagPos: [6.7, 0.02, 1.55],
+    tagPos: [10.4, 0.02, 2.05],
   },
   operations: {
     label: 'Operación',
     color: '#36966C',
-    bounds: [4.6, 3.8, 8.7, 6.1],
-    tagPos: [6.7, 0.02, 5.85],
+    tagPos: [10.4, 0.02, 9.2],
   },
 };
 
 export const CAMERA_PRESETS: CameraPreset[] = [
   {
     id: 'overview',
-    label: 'Vista General · Oficina 3D',
+    label: 'Sede Completa · 28×20 m',
     shortLabel: 'Oficina',
-    position: [22, 18.5, 22],
-    target: [0, 0.45, 0.2],
-    zoom: 52,
+    position: [31, 25, 31],
+    target: [0.6, 0.2, 0.1],
+    zoom: 38,
   },
   {
     id: 'campus',
-    label: 'Campus DAT Alierta · Exterior',
+    label: 'Campus DAT Alierta · Panorámica',
     shortLabel: 'Campus',
-    position: [30, 22.5, 30],
-    target: [0, -0.9, -2.0],
-    zoom: 33,
+    position: [40, 29, 40],
+    target: [0.8, -1.2, -2.4],
+    zoom: 24,
   },
   {
     id: 'reception',
-    label: 'Hall Recepción · 40 Años',
+    label: 'Recepción & Auditorio IntegraTalks',
     shortLabel: 'Recepción',
-    position: [3.5, 9.2, 13.8],
-    target: [-6.9, 0.85, 3.8],
-    zoom: 94,
+    position: [4.5, 11.5, 19.5],
+    target: [-10.6, 0.7, 5.4],
+    zoom: 76,
   },
   {
     id: 'director',
     label: 'Dirección · Plan DAG',
     shortLabel: 'Dirección',
-    position: [4.5, 9.5, 6.2],
-    target: [-6.4, 0.9, -3.8],
-    zoom: 92,
+    position: [4.0, 11.5, 8.2],
+    target: [-10.6, 0.85, -5.8],
+    zoom: 78,
   },
   {
     id: 'boardroom',
-    label: 'Sala Alierta · Reuniones',
+    label: 'Sala Alierta · Consejo',
     shortLabel: 'Sala Alierta',
-    position: [9.5, 9.8, 6.5],
-    target: [0.0, 0.85, -3.7],
-    zoom: 92,
+    position: [9.5, 11.5, 8.2],
+    target: [-3.7, 0.85, -5.8],
+    zoom: 78,
+  },
+  {
+    id: 'academy',
+    label: 'Academia Integra · Formación',
+    shortLabel: 'Formación',
+    position: [16.5, 11.5, 8.2],
+    target: [3.6, 0.85, -5.8],
+    zoom: 78,
   },
   {
     id: 'commercial',
-    label: 'Comercial · CRM y Ofertas',
+    label: 'Comercial · CRM, Ofertas y Cabina',
     shortLabel: 'Comercial',
-    position: [7.2, 9.2, 12.6],
-    target: [-2.6, 0.8, 3.6],
-    zoom: 94,
+    position: [9.2, 11.2, 18.2],
+    target: [-4.0, 0.8, 5.4],
+    zoom: 78,
   },
   {
     id: 'solutions',
-    label: 'Soluciones · Data & AI',
+    label: 'Soluciones · Data & AI Lab',
     shortLabel: 'Soluciones',
-    position: [11.6, 9.4, 12.6],
-    target: [1.8, 0.85, 3.6],
-    zoom: 94,
+    position: [15.5, 11.2, 18.2],
+    target: [2.8, 0.85, 5.4],
+    zoom: 78,
   },
   {
     id: 'communication',
-    label: 'Comunicación · Diseño PPTX',
+    label: 'Comunicación · Estudio PPTX',
     shortLabel: 'Diseño',
-    position: [14.5, 9.0, 9.8],
-    target: [6.5, 0.9, 2.3],
-    zoom: 102,
+    position: [21.5, 10.8, 15.6],
+    target: [9.8, 0.85, 3.8],
+    zoom: 84,
   },
   {
     id: 'operations',
     label: 'Operación · Proyectos y Factura',
     shortLabel: 'Operación',
-    position: [15.0, 9.0, 13.2],
-    target: [6.6, 0.8, 4.9],
-    zoom: 98,
+    position: [22.2, 10.8, 19.5],
+    target: [10.4, 0.8, 7.4],
+    zoom: 84,
   },
   {
     id: 'cafe',
-    label: 'Rincón Café · IntegraTalks',
+    label: 'Rincón Café · Lounge',
     shortLabel: 'Café',
-    position: [15.5, 9.4, 6.4],
-    target: [6.4, 0.85, -3.7],
-    zoom: 94,
+    position: [23.5, 11.5, 7.8],
+    target: [10.5, 0.85, -5.6],
+    zoom: 78,
+  },
+  {
+    id: 'terrace',
+    label: 'Terraza Exterior · Pérgola',
+    shortLabel: 'Terraza',
+    position: [28.5, 11.5, 7.2],
+    target: [15.8, 0.7, -5.2],
+    zoom: 82,
   },
 ];
 
 export const BOARDROOM_SEATS: Array<{ pos: Vec2; yaw: number }> = [
-  { pos: { x: -1.45, z: -3.7 }, yaw: -Math.PI / 2 }, // Director head of table (faces +X)
-  { pos: { x: -0.45, z: -4.65 }, yaw: Math.PI },    // Back left (faces +Z)
-  { pos: { x: 0.55, z: -4.65 }, yaw: Math.PI },     // Back right (faces +Z)
-  { pos: { x: -0.45, z: -2.75 }, yaw: 0 },          // Front left (faces -Z)
-  { pos: { x: 0.55, z: -2.75 }, yaw: 0 },           // Front right (faces -Z)
-  { pos: { x: 1.45, z: -3.7 }, yaw: Math.PI / 2 },  // East head of table (faces -X)
+  { pos: { x: -5.45, z: -5.8 }, yaw: -Math.PI / 2 }, // Director head of table (faces +X)
+  { pos: { x: -4.6, z: -6.95 }, yaw: Math.PI },      // Back 1
+  { pos: { x: -3.7, z: -6.95 }, yaw: Math.PI },      // Back 2
+  { pos: { x: -2.8, z: -6.95 }, yaw: Math.PI },      // Back 3
+  { pos: { x: -4.6, z: -4.65 }, yaw: 0 },            // Front 1
+  { pos: { x: -3.7, z: -4.65 }, yaw: 0 },            // Front 2
+  { pos: { x: -2.8, z: -4.65 }, yaw: 0 },            // Front 3
+  { pos: { x: -1.95, z: -5.8 }, yaw: Math.PI / 2 },  // East head of table (faces -X)
 ];
 
 export const LANDMARK_WAYPOINTS: Record<
   Exclude<AgentActivity, 'desk' | 'boardroom'>,
-  { pos: Vec2; yaw: number; entry?: Vec2 }
+  { pos: Vec2; yaw: number; entry?: Vec2; seated?: boolean }
 > = {
   whiteboard: {
-    pos: { x: -7.5, z: -3.35 },
+    pos: { x: -12.15, z: -5.5 },
     yaw: Math.PI / 2, // faces -X (West wall DAG whiteboard)
-    entry: { x: -4.2, z: -0.2 },
+    entry: { x: -8.2, z: -0.2 },
   },
   reception: {
-    pos: { x: -5.55, z: 3.15 },
-    yaw: Math.PI / 2, // faces reception counter (-X)
-    entry: { x: -5.2, z: 0.35 },
+    pos: { x: -9.15, z: 4.3 },
+    yaw: Math.PI / 2,
+    entry: { x: -8.6, z: 0.4 },
+  },
+  academy: {
+    pos: { x: 3.6, z: -5.2 },
+    yaw: 0, // sits facing instructor screen (-Z)
+    entry: { x: 3.6, z: -1.5 },
+    seated: true,
   },
   coffee: {
-    pos: { x: 5.75, z: -4.9 },
-    yaw: 0, // faces -Z (espresso counter)
-    entry: { x: 4.5, z: -0.2 },
+    pos: { x: 10.35, z: -7.7 },
+    yaw: 0, // faces espresso bar (-Z)
+    entry: { x: 9.8, z: -1.4 },
   },
-  lounge: {
-    pos: { x: 6.1, z: -2.35 },
-    yaw: -Math.PI / 3,
-    entry: { x: 4.5, z: -0.2 },
+  lounge_sofa: {
+    pos: { x: 11.15, z: -4.75 },
+    yaw: Math.PI / 2, // sits comfortably on the L-sofa facing coffee table!
+    entry: { x: 9.8, z: -1.4 },
+    seated: true,
+  },
+  lounge_chair: {
+    pos: { x: 8.95, z: -4.35 },
+    yaw: -Math.PI / 2.2, // sits on lounge armchair facing sofa buddy!
+    entry: { x: 9.8, z: -1.4 },
+    seated: true,
+  },
+  terrace: {
+    pos: { x: 15.8, z: -5.0 },
+    yaw: -Math.PI / 4, // outdoors under the terracotta pergola looking out over Zaragoza!
+    entry: { x: 12.6, z: -5.0 },
+  },
+  phone_booth: {
+    pos: { x: -1.95, z: 3.45 },
+    yaw: 0, // inside acoustic glass phone booth taking a private client call
+    entry: { x: -2.9, z: 3.45 },
+  },
+  auditorium: {
+    pos: { x: -10.5, z: 8.15 },
+    yaw: 0, // sits on the oak IntegraTalks bleachers facing -Z!
+    entry: { x: -8.4, z: 6.4 },
+    seated: true,
   },
   printer: {
-    pos: { x: -1.55, z: 4.55 },
-    yaw: -Math.PI / 2, // faces +X toward printer station
-    entry: { x: -1.65, z: 0.45 },
+    pos: { x: -2.65, z: 7.2 },
+    yaw: -Math.PI / 2,
+    entry: { x: -3.1, z: 0.4 },
   },
   arch_board: {
-    pos: { x: 2.65, z: 3.6 },
-    yaw: -Math.PI / 2, // faces +X toward glass architecture easel
-    entry: { x: 2.65, z: 0.45 },
+    pos: { x: 4.15, z: 6.1 },
+    yaw: -Math.PI / 2,
+    entry: { x: 3.4, z: 0.4 },
   },
   slides_tv: {
-    pos: { x: 6.7, z: 1.95 },
-    yaw: 0, // faces -Z toward 6-slide presentation screen on north divider
-    entry: { x: 4.9, z: 0.45 },
-  },
-  window_view: {
-    pos: { x: 7.45, z: -5.35 },
-    yaw: 0, // faces -Z out the panoramic terracotta louver glass toward DAT Alierta campus!
-    entry: { x: 4.6, z: -0.2 },
+    pos: { x: 9.8, z: 3.25 },
+    yaw: 0,
+    entry: { x: 7.7, z: 0.4 },
   },
   retro_pc: {
-    pos: { x: -6.95, z: 5.0 },
-    yaw: Math.PI / 2.6, // faces 1986 Retro PC plinth
-    entry: { x: -5.2, z: 0.4 },
+    pos: { x: -11.6, z: 6.25 },
+    yaw: Math.PI / 2.5,
+    entry: { x: -8.6, z: 6.25 },
   },
   garden_chat: {
-    pos: { x: -7.1, z: 0.25 },
-    yaw: Math.PI / 2, // faces the biophilic vertical garden on West wall
-    entry: { x: -5.2, z: 0.25 },
+    pos: { x: -12.0, z: -2.4 },
+    yaw: Math.PI / 2,
+    entry: { x: -8.3, z: -0.2 },
   },
 };
 
@@ -348,12 +390,12 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'director',
     zoneLabel: 'Zona Dirección',
     accentColor: '#0B2A5B',
-    deskPos: { x: -5.85, z: -4.45 },
-    deskYaw: 0, // sits on +Z side facing -Z (monitors face +Z towards camera!)
-    seatPos: { x: -5.55, z: -3.32 },
-    exitPos: { x: -4.4, z: -2.95 },
-    corridorX: -4.2,
-    corridorZ: -0.2,
+    deskPos: { x: -10.35, z: -6.5 },
+    deskYaw: 0,
+    seatPos: { x: -10.05, z: -5.35 },
+    exitPos: { x: -8.35, z: -4.9 },
+    corridorX: -8.25,
+    corridorZ: -0.1,
     boardroomSeatIndex: 0,
     appearance: {
       skin: '#E8BC9F',
@@ -381,7 +423,7 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     ],
     coffeeBanter: [
       'Buen café para arrancar el expediente de Nortia Industrial.',
-      '¿Visteis el render nuevo del DAT Alierta? Qué luz natural.',
+      'Qué luz tan buena entra hoy desde la terraza del DAT Alierta.',
     ],
   },
   crm: {
@@ -392,11 +434,11 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'commercial',
     zoneLabel: 'Zona Comercial',
     accentColor: '#2D5A88',
-    deskPos: { x: -3.35, z: 2.35 },
+    deskPos: { x: -4.85, z: 3.65 },
     deskYaw: 0,
-    seatPos: { x: -3.35, z: 3.12 },
-    exitPos: { x: -2.05, z: 3.12 },
-    corridorX: -2.0,
+    seatPos: { x: -4.85, z: 4.45 },
+    exitPos: { x: -3.2, z: 4.45 },
+    corridorX: -3.15,
     corridorZ: 0.4,
     boardroomSeatIndex: 1,
     appearance: {
@@ -425,8 +467,8 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
       'Validando account_brief.json con historial de contacto…',
     ],
     coffeeBanter: [
-      'Nortia lleva 67 días con la oportunidad de analítica parada, ¡toca moverla!',
-      'Café rápido y vuelvo al pipeline comercial.',
+      'Nortia lleva 67 días con la oportunidad parada, ¡hoy se reactiva!',
+      'Paso por la cabina acústica para una llamada rápida y vuelvo.',
     ],
   },
   offers: {
@@ -437,13 +479,13 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'commercial',
     zoneLabel: 'Zona Comercial',
     accentColor: '#115293',
-    deskPos: { x: -3.35, z: 4.7 },
+    deskPos: { x: -4.85, z: 7.2 },
     deskYaw: 0,
-    seatPos: { x: -3.35, z: 5.47 },
-    exitPos: { x: -2.05, z: 5.35 },
-    corridorX: -2.0,
+    seatPos: { x: -4.85, z: 8.0 },
+    exitPos: { x: -3.2, z: 7.65 },
+    corridorX: -3.15,
     corridorZ: 0.4,
-    boardroomSeatIndex: 3,
+    boardroomSeatIndex: 4,
     appearance: {
       skin: '#E5B799',
       blazer: '#115293',
@@ -469,8 +511,8 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
       'Maquetando oferta-nortia-borrador.docx con sello BORRADOR…',
     ],
     coffeeBanter: [
-      'Bandas de precio cuadradas al euro desde catálogo determinista.',
-      'En cuanto Dirección apruebe el borrador, lanzamos plan y factura.',
+      'Bandas de precio cuadradas al euro desde el catálogo determinista.',
+      'En cuanto Dirección apruebe en Sala Alierta, lanzamos Operación.',
     ],
   },
   consultant: {
@@ -481,11 +523,11 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'solutions',
     zoneLabel: 'Zona Soluciones',
     accentColor: '#2F6657',
-    deskPos: { x: 1.0, z: 2.35 },
+    deskPos: { x: 1.55, z: 3.65 },
     deskYaw: 0,
-    seatPos: { x: 1.0, z: 3.12 },
-    exitPos: { x: 2.45, z: 3.12 },
-    corridorX: 2.45,
+    seatPos: { x: 1.55, z: 4.45 },
+    exitPos: { x: 3.35, z: 4.45 },
+    corridorX: 3.35,
     corridorZ: 0.4,
     boardroomSeatIndex: 2,
     appearance: {
@@ -509,12 +551,12 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     defaultSources: ['INT-PUBLIC-01', 'DEMO-METHOD-01'],
     workingComments: [
       'Separando requisitos explícitos e inferidos de Nortia Industrial…',
-      'Añadiendo fase de capacitación y adopción según respuesta humana…',
+      'Añadiendo fase de formación en Academia Integra según alcance…',
       'Registrando riesgos, supuestos y dependencias en briefing.json…',
     ],
     coffeeBanter: [
-      'Me encanta cuando el cliente pide formación desde el día uno.',
-      'Reviso con Data & AI las fases de adopción en Power BI.',
+      'Me encanta cuando el cliente pide formación en Academia Integra.',
+      'Revisando las fases de adopción de Power BI en el lounge.',
     ],
   },
   architect: {
@@ -525,13 +567,13 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'solutions',
     zoneLabel: 'Zona Soluciones',
     accentColor: '#16687A',
-    deskPos: { x: 1.0, z: 4.7 },
+    deskPos: { x: 1.55, z: 7.2 },
     deskYaw: 0,
-    seatPos: { x: 1.0, z: 5.47 },
-    exitPos: { x: 2.45, z: 5.35 },
-    corridorX: 2.45,
+    seatPos: { x: 1.55, z: 8.0 },
+    exitPos: { x: 3.35, z: 7.65 },
+    corridorX: 3.35,
     corridorZ: 0.4,
-    boardroomSeatIndex: 4,
+    boardroomSeatIndex: 5,
     appearance: {
       skin: '#ECC4A8',
       blazer: '#16687A',
@@ -554,12 +596,12 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     defaultSources: ['MS-FABRIC-01', 'MS-POWERBI-01', 'INT-PUBLIC-02'],
     workingComments: [
       'Diseñando Lakehouse + OneLake + Power BI en Microsoft Fabric…',
-      'Validando grafo acíclico de solución (8 nodos, 0 ciclos)…',
+      'Validando grafo acíclico de solución (6 nodos, 0 ciclos)…',
       'Renderizando diagrama determinista architecture-nortia.svg…',
     ],
     coffeeBanter: [
+      'El nuevo rack de Data & AI Lab va fino como la seda.',
       'Con Microsoft Fabric y OneLake el dato industrial fluye limpio.',
-      'A ver si el SVG queda de portada para la oferta de Carlos.',
     ],
   },
   designer: {
@@ -570,13 +612,13 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'communication',
     zoneLabel: 'Zona Comunicación',
     accentColor: '#9E2472',
-    deskPos: { x: 6.6, z: 2.55 },
-    deskYaw: 0, // sits on +Z side facing -Z (monitors & 6-slide screen face +Z toward camera!)
-    seatPos: { x: 6.6, z: 3.32 },
-    exitPos: { x: 5.15, z: 3.15 },
-    corridorX: 4.9,
+    deskPos: { x: 9.8, z: 4.15 },
+    deskYaw: 0,
+    seatPos: { x: 9.8, z: 4.95 },
+    exitPos: { x: 7.85, z: 4.75 },
+    corridorX: 7.8,
     corridorZ: 0.4,
-    boardroomSeatIndex: 5,
+    boardroomSeatIndex: 3,
     appearance: {
       skin: '#F0C8AE',
       blazer: '#8A2866',
@@ -602,8 +644,8 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
       'Exportando comite-nortia-industrial.pptx desde JSON validado…',
     ],
     coffeeBanter: [
-      'La portada en azul marino con cian y logo blanco queda impecable.',
-      'Solo seis slides limpias: cero ruido visual en proyección.',
+      'La portada azul marino con cian y el SVG oficial queda impecable.',
+      'Salgo un minuto a la terraza exterior a despejar la vista.',
     ],
   },
   delivery: {
@@ -614,13 +656,13 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'operations',
     zoneLabel: 'Zona Operación',
     accentColor: '#36966C',
-    deskPos: { x: 5.55, z: 4.7 },
+    deskPos: { x: 8.85, z: 7.4 },
     deskYaw: 0,
-    seatPos: { x: 5.55, z: 5.47 },
-    exitPos: { x: 4.7, z: 4.2 },
-    corridorX: 4.8,
+    seatPos: { x: 8.85, z: 8.2 },
+    exitPos: { x: 7.75, z: 6.7 },
+    corridorX: 7.75,
     corridorZ: 0.4,
-    boardroomSeatIndex: 4,
+    boardroomSeatIndex: 6,
     appearance: {
       skin: '#A87654',
       blazer: '#374B5E',
@@ -643,12 +685,12 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     defaultSources: ['PROJECTS-FIXTURE-2026', 'OFFER-APPROVED-01'],
     workingComments: [
       'Calculando calendario determinista de 4 fases e hitos de entrega…',
-      'Asignando equipo consultor y ventana de formación a usuarios…',
+      'Asignando equipo consultor y ventana de formación en Academia…',
       'Generando plan-proyecto-nortia-borrador.pdf verificable…',
     ],
     coffeeBanter: [
       'Arranque limpio en semana 1, kickoff con Nortia ya calendarizado.',
-      'Hitos deterministas: cero fechas inventadas.',
+      'Qué gusto trabajar en un edificio con terraza y grada propia.',
     ],
   },
   billing: {
@@ -659,13 +701,13 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     zone: 'operations',
     zoneLabel: 'Zona Operación',
     accentColor: '#7E5443',
-    deskPos: { x: 7.65, z: 4.7 },
+    deskPos: { x: 11.95, z: 7.4 },
     deskYaw: 0,
-    seatPos: { x: 7.65, z: 5.47 },
-    exitPos: { x: 6.65, z: 3.9 },
-    corridorX: 4.8,
+    seatPos: { x: 11.95, z: 8.2 },
+    exitPos: { x: 10.65, z: 6.2 },
+    corridorX: 7.75,
     corridorZ: 0.4,
-    boardroomSeatIndex: 5,
+    boardroomSeatIndex: 7,
     appearance: {
       skin: '#C99573',
       blazer: '#7E5443',
@@ -692,7 +734,7 @@ export const AGENT_PROFILES: Record<AgentId, AgentVisualProfile> = {
     ],
     coffeeBanter: [
       'Todo borrador marcado bien visible: nada se contabiliza solo.',
-      'Un espresso y cierro el informe de aging de Nortia.',
+      'Un espresso en el sofá y cierro el informe de aging.',
     ],
   },
 };
@@ -709,86 +751,126 @@ export const AGENT_ORDER: AgentId[] = [
 ];
 
 /**
- * Computes a collision-free corridor waypoint route from an agent's current
- * floor position to a target activity destination.
+ * Computes a collision-free corridor waypoint route across the 28m x 20m flagship
+ * floorplate, keeping clear of the atrium stairwell, glass partitions, and desks.
  */
 export function buildAgentRoute(
   profile: AgentVisualProfile,
   from: Vec2,
   activity: AgentActivity
 ): { waypoints: Vec2[]; finalYaw: number; seatedAtEnd: boolean } {
-  const corridorZ = 0.25;
+  // Slight personal lane offset in corridor so agents passing each other don't collide head-on
+  const laneOffset = ((profile.boardroomSeatIndex % 3) - 1) * 0.45;
+  const corridorZ = 0.25 + laneOffset;
+
+  const leaveCurrentRoom = (pts: Vec2[]) => {
+    const nearSeat = Math.hypot(from.x - profile.seatPos.x, from.z - profile.seatPos.z) < 0.55;
+    if (nearSeat) {
+      pts.push(profile.exitPos);
+      return;
+    }
+    // Exit Sala Alierta cleanly via doorway (-3.7, -2.0)
+    if (from.z < -2.0 && from.x > -7.3 && from.x < -0.1) {
+      pts.push({ x: -3.7, z: -2.4 }, { x: -3.7, z: corridorZ });
+      return;
+    }
+    // Exit Academia cleanly via doorway (+3.6, -2.0)
+    if (from.z < -2.0 && from.x >= 0.1 && from.x < 7.2) {
+      pts.push({ x: 3.6, z: -2.4 }, { x: 3.6, z: corridorZ });
+      return;
+    }
+    // Exit Outdoor Terrace back through Café glass door (+14.0, -5.0)
+    if (from.x > 13.8) {
+      pts.push({ x: 12.6, z: -5.0 }, { x: 9.8, z: -1.4 }, { x: 9.8, z: corridorZ });
+      return;
+    }
+    // Exit Café / Lounge cleanly via entrance (+9.8, -1.6)
+    if (from.z < -2.0 && from.x >= 7.2) {
+      pts.push({ x: 9.8, z: -1.4 }, { x: 9.8, z: corridorZ });
+      return;
+    }
+    // Exit Acoustic Phone Booth
+    if (Math.hypot(from.x - -1.95, from.z - 3.45) < 0.8) {
+      pts.push({ x: -3.1, z: 3.45 });
+    }
+    // Exit Reception Retro PC / Auditorium without cutting through Reception Desk!
+    if (from.x < -9.5 && from.z > 4.8) {
+      pts.push({ x: -8.6, z: 6.25 }, { x: -8.6, z: corridorZ });
+    }
+  };
 
   if (activity === 'desk') {
     const distToSeat = Math.hypot(from.x - profile.seatPos.x, from.z - profile.seatPos.z);
-    if (distToSeat < 0.2) {
+    if (distToSeat < 0.25) {
       return { waypoints: [profile.seatPos], finalYaw: profile.deskYaw, seatedAtEnd: true };
     }
     const pts: Vec2[] = [];
-    // If inside boardroom, exit cleanly via central glass doorway
-    if (from.z < -1.1 && from.x > -3.3 && from.x < 3.3) {
-      pts.push({ x: 0, z: -1.65 }, { x: 0, z: corridorZ });
-    } else if (Math.abs(from.z - profile.seatPos.z) > 1.8 || Math.abs(from.x - profile.seatPos.x) > 2.2) {
-      pts.push({ x: from.x, z: corridorZ });
-    }
-    pts.push({ x: profile.corridorX, z: corridorZ }, profile.exitPos, profile.seatPos);
+    leaveCurrentRoom(pts);
+    pts.push({ x: Math.max(-8.8, from.x), z: corridorZ }, { x: profile.corridorX, z: corridorZ }, profile.exitPos, profile.seatPos);
     return { waypoints: dedupeWaypoints(pts, from), finalYaw: profile.deskYaw, seatedAtEnd: true };
   }
 
   const pts: Vec2[] = [];
-  // Step 1: leave desk or boardroom cleanly
-  const nearSeat = Math.hypot(from.x - profile.seatPos.x, from.z - profile.seatPos.z) < 0.45;
-  if (nearSeat) {
-    pts.push(profile.exitPos);
-  } else if (from.z < -1.1 && from.x > -3.3 && from.x < 3.3) {
-    pts.push({ x: 0, z: -1.65 });
-  }
+  leaveCurrentRoom(pts);
 
   if (activity === 'boardroom') {
     const seat = BOARDROOM_SEATS[profile.boardroomSeatIndex % BOARDROOM_SEATS.length];
     pts.push(
-      { x: profile.corridorX, z: corridorZ },
-      { x: 0, z: corridorZ },
-      { x: 0, z: -1.75 },
+      { x: Math.max(-8.8, profile.corridorX), z: corridorZ },
+      { x: -3.7, z: corridorZ },
+      { x: -3.7, z: -2.5 },
       seat.pos
     );
     return { waypoints: dedupeWaypoints(pts, from), finalYaw: seat.yaw, seatedAtEnd: true };
   }
 
   const target = LANDMARK_WAYPOINTS[activity];
-  // Shortcut if Director walks to own whiteboard inside Dirección zone
-  if (profile.id === 'director' && activity === 'whiteboard' && from.z < -1.0 && from.x < -3.4) {
-    pts.push({ x: -6.3, z: -3.2 }, target.pos);
+
+  // Fast direct in-zone shortcuts
+  if (profile.id === 'director' && activity === 'whiteboard' && from.z < -1.8 && from.x < -7.2) {
+    pts.push({ x: -10.8, z: -4.8 }, target.pos);
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+  }
+  if ((profile.id === 'offers' || profile.id === 'crm') && activity === 'printer' && from.z > 1.8 && from.x < -1.0) {
+    pts.push({ x: -3.15, z: 7.2 }, target.pos);
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+  }
+  if ((profile.id === 'architect' || profile.id === 'consultant') && activity === 'arch_board' && from.z > 1.8 && from.x > -0.8 && from.x < 6.8) {
+    pts.push({ x: 3.35, z: 6.1 }, target.pos);
     return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
   }
 
-  // Shortcut if Offers walks to own Comercial printer
-  if ((profile.id === 'offers' || profile.id === 'crm') && activity === 'printer' && from.z > 1.2 && from.x < -0.5) {
-    pts.push({ x: -2.0, z: 4.55 }, target.pos);
+  // Terrace goes smoothly through the Café entrance -> glass terrace door -> outdoor deck
+  if (activity === 'terrace') {
+    pts.push(
+      { x: Math.max(-8.8, from.x), z: corridorZ },
+      { x: 9.8, z: corridorZ },
+      { x: 9.8, z: -1.4 },
+      { x: 12.6, z: -5.0 },
+      target.pos
+    );
     return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
   }
 
-  // Shortcut if Solutions agents walk to glass architecture board
-  if ((profile.id === 'architect' || profile.id === 'consultant') && activity === 'arch_board' && from.z > 1.2 && from.x > -0.3 && from.x < 4.3) {
-    pts.push({ x: 2.35, z: 3.6 }, target.pos);
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
-  }
-
-  pts.push({ x: profile.corridorX, z: corridorZ });
+  pts.push({ x: Math.max(-8.8, from.x), z: corridorZ });
   if (target.entry) {
     pts.push({ x: target.entry.x, z: corridorZ }, target.entry);
   } else {
     pts.push({ x: target.pos.x, z: corridorZ });
   }
   pts.push(target.pos);
-  return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+  return {
+    waypoints: dedupeWaypoints(pts, from),
+    finalYaw: target.yaw,
+    seatedAtEnd: Boolean(target.seated),
+  };
 }
 
 function dedupeWaypoints(points: Vec2[], start: Vec2): Vec2[] {
   const out: Vec2[] = [];
   let prev = start;
   for (const p of points) {
-    if (Math.hypot(p.x - prev.x, p.z - prev.z) > 0.14) {
+    if (Math.hypot(p.x - prev.x, p.z - prev.z) > 0.16) {
       out.push(p);
       prev = p;
     }

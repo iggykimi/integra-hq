@@ -474,7 +474,7 @@ export function reduceOfficeSceneState(
   if (overrides.coffeeBreakActive) {
     const coffeeCrew: AgentId[] = ['crm', 'consultant', 'designer'];
     coffeeCrew.forEach((id, idx) => {
-      agents[id].activity = idx === 0 ? 'coffee' : 'lounge';
+      agents[id].activity = idx === 0 ? 'coffee' : idx === 1 ? 'lounge_sofa' : 'terrace';
       agents[id].state = 'idle';
       agents[id].holdingProp = 'coffee';
       agents[id].bubbleText = AGENT_PROFILES[id].coffeeBanter[0];

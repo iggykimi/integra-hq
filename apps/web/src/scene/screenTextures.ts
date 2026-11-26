@@ -25,37 +25,42 @@ export function loadBrandSvgImage(src: string): Promise<HTMLImageElement> {
 
 export function drawReceptionLogoWall(
   ctx: CanvasRenderingContext2D,
-  logoColor: HTMLImageElement | null
+  logoWhite: HTMLImageElement | null
 ): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
-  ctx.fillStyle = '#FFFFFF';
+  // Executive Integra Navy architectural backdrop (crisp contrast under bright daylight!)
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#092B5A');
+  grad.addColorStop(1, '#0F3D73');
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);
 
-  // Subtle architectural cyan frame on top-left (exact brand-tokens.json headlineFrame rule)
+  // Architectural cyan corner frame (exact brand-tokens.json headlineFrame rule)
   ctx.fillStyle = '#00B0F0';
-  ctx.fillRect(28, 28, 240, 8);
-  ctx.fillRect(28, 28, 8, 120);
+  ctx.fillRect(26, 26, 220, 7);
+  ctx.fillRect(26, 26, 7, 108);
+  ctx.fillRect(w - 246, h - 33, 220, 7);
 
-  if (logoColor) {
-    const targetW = 470;
-    const aspect = logoColor.naturalHeight / Math.max(1, logoColor.naturalWidth);
+  if (logoWhite) {
+    const targetW = 450;
+    const aspect = logoWhite.naturalHeight / Math.max(1, logoWhite.naturalWidth);
     const targetH = targetW * aspect;
-    ctx.drawImage(logoColor, (w - targetW) / 2, 74, targetW, targetH);
+    ctx.drawImage(logoWhite, (w - targetW) / 2, 68, targetW, targetH);
   } else {
-    ctx.fillStyle = '#0B2A5B';
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = '700 68px Poppins, Segoe UI, sans-serif';
     ctx.fillText('integra', 180, 160);
   }
 
-  ctx.fillStyle = '#0B2A5B';
+  ctx.fillStyle = '#43C6F0';
   ctx.font = '700 22px Poppins, Segoe UI, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('INTEGRA HQ · DAT ALIERTA 2029', w / 2, 232);
+  ctx.fillText('INTEGRA HQ · DAT ALIERTA 2029', w / 2, 226);
 
-  ctx.fillStyle = '#5B6B7C';
+  ctx.fillStyle = '#D5E8F7';
   ctx.font = '500 15px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('LA IA COMO CATALIZADOR DE TU CRECIMIENTO · ZARAGOZA', w / 2, 260);
+  ctx.fillText('LA IA COMO CATALIZADOR DE TU CRECIMIENTO · ZARAGOZA', w / 2, 254);
   ctx.textAlign = 'left';
 }
 
@@ -658,6 +663,92 @@ export function drawRetroPcScreen(ctx: CanvasRenderingContext2D, phase: number):
   ctx.fillText('40 ANIVERSARIO HQ', 16, 84);
   const cursor = phase % 2 === 0 ? '█' : '';
   ctx.fillText(`C:\\INTEGRA> RUN 2029 ${cursor}`, 16, 122);
+}
+
+export function drawAcademyScreen(
+  ctx: CanvasRenderingContext2D,
+  includesTraining: boolean,
+  logoWhite: HTMLImageElement | null
+): void {
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  ctx.fillStyle = includesTraining ? '#0A2C4E' : '#1E2C38';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = includesTraining ? '#36966C' : '#5B6B7C';
+  ctx.fillRect(0, 0, w, 48);
+
+  if (logoWhite) {
+    const lw = 104;
+    const lh = lw * (logoWhite.naturalHeight / Math.max(1, logoWhite.naturalWidth));
+    ctx.drawImage(logoWhite, 16, 12, lw, lh);
+  }
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 17px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('ACADEMIA INTEGRA · FORMACIÓN', 138, 30);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 22px Poppins, Segoe UI, sans-serif';
+  ctx.fillText(
+    includesTraining ? 'Módulo Capacitación Nortia ACTIVO' : 'Módulo Formación: Opcional',
+    22,
+    92
+  );
+
+  ctx.fillStyle = includesTraining ? '#43C6F0' : '#9AA9B8';
+  ctx.font = '600 14px IBM Plex Mono, monospace';
+  ctx.fillText(
+    includesTraining
+      ? '48 h · Power BI + Microsoft Fabric + Adopción IA'
+      : 'Excluido en el alcance actual · activable en #3',
+    22,
+    124
+  );
+
+  // Module schedule blocks
+  const blocks: Array<[number, string, string]> = [
+    [22, 'S1 · Lakehouse', includesTraining ? '#00B0F0' : '#465664'],
+    [194, 'S2 · Power BI', includesTraining ? '#36966C' : '#465664'],
+    [366, 'S3 · Copilot IA', includesTraining ? '#7030A0' : '#465664'],
+  ];
+  for (const [bx, label, col] of blocks) {
+    ctx.fillStyle = col;
+    ctx.fillRect(bx, 152, 156, 74);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 14px Poppins, Segoe UI, sans-serif';
+    ctx.fillText(label, bx + 14, 196);
+  }
+}
+
+export function drawExteriorMonolith(
+  ctx: CanvasRenderingContext2D,
+  logoWhite: HTMLImageElement | null
+): void {
+  const w = ctx.canvas.width;
+  const h = ctx.canvas.height;
+  ctx.fillStyle = '#0B2A5B';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.fillStyle = '#00B0F0';
+  ctx.fillRect(0, 0, 14, h);
+
+  if (logoWhite) {
+    const lw = 240;
+    const lh = lw * (logoWhite.naturalHeight / Math.max(1, logoWhite.naturalWidth));
+    ctx.drawImage(logoWhite, 36, 46, lw, lh);
+  }
+
+  ctx.fillStyle = '#43C6F0';
+  ctx.font = '700 20px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('DAT ALIERTA', 36, 152);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '600 16px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('SEDE CORPORATIVA · 2029', 36, 182);
+  ctx.fillStyle = '#9BC2E0';
+  ctx.font = '500 13px IBM Plex Mono, monospace';
+  ctx.fillText('CAMPUS RÍO EBRO · ZARAGOZA', 36, 224);
+  ctx.fillText('8.000 m² · EMPRESA AGÉNTICA', 36, 248);
 }
 
 export function createCanvasTexture(width: number, height: number): {
