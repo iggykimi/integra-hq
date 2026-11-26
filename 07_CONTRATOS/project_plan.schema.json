@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProjectPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "account_id",
+    "offer_ref",
+    "as_of",
+    "phases",
+    "milestones",
+    "dependencies",
+    "total_estimated_hours",
+    "risks",
+    "source_refs"
+  ],
+  "properties": {
+    "status": { "const": "BORRADOR" },
+    "account_id": { "type": "string", "minLength": 1 },
+    "offer_ref": { "type": "string", "minLength": 1 },
+    "as_of": { "type": "string", "format": "date" },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "service_id", "duration_weeks", "estimated_hours", "deliverables"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "service_id": { "type": "string" },
+          "duration_weeks": { "type": "integer", "minimum": 1 },
+          "estimated_hours": { "type": "number", "minimum": 0 },
+          "deliverables": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "phase_id", "target_week", "exit_criteria"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "phase_id": { "type": "string" },
+          "target_week": { "type": "integer", "minimum": 1 },
+          "exit_criteria": { "type": "string" }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "total_estimated_hours": {
+      "type": "number",
+      "minimum": 0
+    },
+    "risks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "impact", "mitigation"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "impact": { "enum": ["low", "medium", "high"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  }
+}

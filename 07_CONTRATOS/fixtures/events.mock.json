@@ -2,234 +2,482 @@
   {
     "event_id": "mock-001",
     "sequence": 1,
-    "timestamp": "2026-11-25T12:00:00+00:00",
+    "timestamp": "2026-11-26T10:00:00Z",
     "type": "request.received",
     "project_id": "DEMO-001",
     "agent_id": "director",
     "task_id": null,
     "payload": {
-      "title": "Solicitud ficticia recibida",
+      "title": "Señal de oportunidad recibida: Nortia Industrial",
+      "account_id": "ACC-NORTIA-001",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-002",
     "sequence": 2,
-    "timestamp": "2026-11-25T12:00:02+00:00",
-    "type": "plan.created",
+    "timestamp": "2026-11-26T10:00:08Z",
+    "type": "human.message",
     "project_id": "DEMO-001",
     "agent_id": "director",
     "task_id": null,
     "payload": {
-      "title": "Plan de tres tareas",
+      "author": "director",
+      "title": "Decisión de alcance pendiente",
+      "text": "Nortia Industrial solicita ampliar la plataforma de datos. ¿Incluimos la fase opcional de formación en la oferta?",
+      "options": ["Sí, incluir formación", "No, excluir formación"],
       "synthetic": true
     }
   },
   {
     "event_id": "mock-003",
     "sequence": 3,
-    "timestamp": "2026-11-25T12:00:03+00:00",
-    "type": "task.assigned",
+    "timestamp": "2026-11-26T10:00:09Z",
+    "type": "run.paused",
     "project_id": "DEMO-001",
-    "agent_id": "consultant",
-    "task_id": "t1",
+    "agent_id": "director",
+    "task_id": null,
     "payload": {
-      "title": "Analizar requisitos",
+      "reason": "waiting_human_scope_decision",
+      "title": "Ejecución en pausa a la espera de respuesta humana",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-004",
     "sequence": 4,
-    "timestamp": "2026-11-25T12:00:03+00:00",
-    "type": "task.assigned",
+    "timestamp": "2026-11-26T10:00:22Z",
+    "type": "human.message",
     "project_id": "DEMO-001",
-    "agent_id": "architect",
-    "task_id": "t2",
+    "agent_id": null,
+    "task_id": null,
     "payload": {
-      "title": "Disenar arquitectura",
+      "author": "human",
+      "decision": "answer",
+      "text": "Sí, incluir formación",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-005",
     "sequence": 5,
-    "timestamp": "2026-11-25T12:00:04+00:00",
-    "type": "task.started",
+    "timestamp": "2026-11-26T10:00:23Z",
+    "type": "run.resumed",
     "project_id": "DEMO-001",
-    "agent_id": "consultant",
-    "task_id": "t1",
+    "agent_id": "director",
+    "task_id": null,
     "payload": {
-      "title": "Consultoria en ejecucion",
+      "title": "Plan actualizado con fase de formación",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-006",
     "sequence": 6,
-    "timestamp": "2026-11-25T12:00:04+00:00",
-    "type": "task.started",
+    "timestamp": "2026-11-26T10:00:28Z",
+    "type": "plan.created",
     "project_id": "DEMO-001",
-    "agent_id": "architect",
-    "task_id": "t2",
+    "agent_id": "director",
+    "task_id": null,
     "payload": {
-      "title": "Arquitectura en ejecucion",
+      "title": "Plan DAG validado de 7 tareas (ciclo completo)",
+      "task_count": 7,
+      "includes_training": true,
       "synthetic": true
     }
   },
   {
     "event_id": "mock-007",
     "sequence": 7,
-    "timestamp": "2026-11-25T12:00:06+00:00",
-    "type": "tool.started",
+    "timestamp": "2026-11-26T10:00:30Z",
+    "type": "task.assigned",
     "project_id": "DEMO-001",
-    "agent_id": "consultant",
+    "agent_id": "crm",
     "task_id": "t1",
     "payload": {
-      "title": "Consulta de fichas publicas",
+      "title": "Leer cuenta, oportunidad y pipeline de Nortia Industrial",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-008",
     "sequence": 8,
-    "timestamp": "2026-11-25T12:00:08+00:00",
-    "type": "tool.completed",
+    "timestamp": "2026-11-26T10:00:30Z",
+    "type": "task.assigned",
     "project_id": "DEMO-001",
     "agent_id": "consultant",
-    "task_id": "t1",
+    "task_id": "t2",
     "payload": {
-      "title": "Fuentes de ejemplo recuperadas",
+      "title": "Analizar requisitos, riesgos y fases (con formación)",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-009",
     "sequence": 9,
-    "timestamp": "2026-11-25T12:00:12+00:00",
-    "type": "task.completed",
+    "timestamp": "2026-11-26T10:00:32Z",
+    "type": "task.started",
     "project_id": "DEMO-001",
-    "agent_id": "consultant",
+    "agent_id": "crm",
     "task_id": "t1",
     "payload": {
-      "title": "Briefing sintetico terminado",
+      "title": "CRM en ejecución (paralelo con Consultoría)",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-010",
     "sequence": 10,
-    "timestamp": "2026-11-25T12:00:13+00:00",
-    "type": "tool.started",
+    "timestamp": "2026-11-26T10:00:32Z",
+    "type": "task.started",
     "project_id": "DEMO-001",
-    "agent_id": "architect",
+    "agent_id": "consultant",
     "task_id": "t2",
     "payload": {
-      "title": "Generacion de diagrama",
+      "title": "Consultoría en ejecución (paralelo con CRM)",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-011",
     "sequence": 11,
-    "timestamp": "2026-11-25T12:00:15+00:00",
-    "type": "artifact.created",
+    "timestamp": "2026-11-26T10:00:35Z",
+    "type": "tool.started",
     "project_id": "DEMO-001",
-    "agent_id": "architect",
-    "task_id": "t2",
+    "agent_id": "crm",
+    "task_id": "t1",
     "payload": {
-      "title": "Diagrama ficticio disponible",
+      "tool": "read_crm",
+      "title": "Lectura de cuenta ACC-NORTIA-001 (as_of 2026-11-26)",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-012",
     "sequence": 12,
-    "timestamp": "2026-11-25T12:00:16+00:00",
-    "type": "task.completed",
+    "timestamp": "2026-11-26T10:00:38Z",
+    "type": "tool.completed",
     "project_id": "DEMO-001",
-    "agent_id": "architect",
-    "task_id": "t2",
+    "agent_id": "crm",
+    "task_id": "t1",
     "payload": {
-      "title": "Arquitectura sintetica terminada",
+      "tool": "read_crm",
+      "title": "Brief de cuenta recuperado (1 oportunidad activa, 1 estancada)",
+      "sources": ["CRM-ACC-NORTIA-001"],
       "synthetic": true
     }
   },
   {
     "event_id": "mock-013",
     "sequence": 13,
-    "timestamp": "2026-11-25T12:00:17+00:00",
-    "type": "task.assigned",
+    "timestamp": "2026-11-26T10:00:44Z",
+    "type": "task.completed",
     "project_id": "DEMO-001",
-    "agent_id": "designer",
-    "task_id": "t3",
+    "agent_id": "crm",
+    "task_id": "t1",
     "payload": {
-      "title": "Preparar presentacion",
+      "title": "account_brief.json validado",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-014",
     "sequence": 14,
-    "timestamp": "2026-11-25T12:00:18+00:00",
-    "type": "task.started",
+    "timestamp": "2026-11-26T10:00:50Z",
+    "type": "task.completed",
     "project_id": "DEMO-001",
-    "agent_id": "designer",
-    "task_id": "t3",
+    "agent_id": "consultant",
+    "task_id": "t2",
     "payload": {
-      "title": "Diseno en ejecucion",
+      "title": "briefing.json validado (incluye fase de formación)",
+      "sources": ["INT-PUBLIC-01", "DEMO-METHOD-01"],
       "synthetic": true
     }
   },
   {
     "event_id": "mock-015",
     "sequence": 15,
-    "timestamp": "2026-11-25T12:00:23+00:00",
-    "type": "tool.completed",
+    "timestamp": "2026-11-26T10:00:52Z",
+    "type": "task.started",
     "project_id": "DEMO-001",
-    "agent_id": "designer",
+    "agent_id": "architect",
     "task_id": "t3",
     "payload": {
-      "title": "Plantilla ficticia aplicada",
+      "title": "Arquitectura Data & AI en ejecución",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-016",
     "sequence": 16,
-    "timestamp": "2026-11-25T12:00:24+00:00",
+    "timestamp": "2026-11-26T10:01:08Z",
     "type": "artifact.created",
     "project_id": "DEMO-001",
-    "agent_id": "designer",
+    "agent_id": "architect",
     "task_id": "t3",
     "payload": {
-      "title": "Presentacion simulada (sin archivo real)",
+      "artifact_id": "art-arch-svg",
+      "name": "architecture-nortia.svg",
+      "mime": "image/svg+xml",
+      "title": "Diagrama SVG generado desde JSON validado (mock)",
       "synthetic": true
     }
   },
   {
     "event_id": "mock-017",
     "sequence": 17,
-    "timestamp": "2026-11-25T12:00:25+00:00",
+    "timestamp": "2026-11-26T10:01:10Z",
     "type": "task.completed",
     "project_id": "DEMO-001",
-    "agent_id": "designer",
+    "agent_id": "architect",
     "task_id": "t3",
     "payload": {
-      "title": "Diseno simulado terminado",
+      "title": "Arquitectura completada",
+      "sources": ["MS-FABRIC-01", "MS-POWERBI-01"],
       "synthetic": true
     }
   },
   {
     "event_id": "mock-018",
     "sequence": 18,
-    "timestamp": "2026-11-25T12:00:26+00:00",
+    "timestamp": "2026-11-26T10:01:12Z",
+    "type": "task.started",
+    "project_id": "DEMO-001",
+    "agent_id": "offers",
+    "task_id": "t4",
+    "payload": {
+      "title": "Elaborando borrador de oferta con catálogo aprobado",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-019",
+    "sequence": 19,
+    "timestamp": "2026-11-26T10:01:30Z",
+    "type": "artifact.created",
+    "project_id": "DEMO-001",
+    "agent_id": "offers",
+    "task_id": "t4",
+    "payload": {
+      "artifact_id": "art-offer-docx",
+      "name": "oferta-nortia-borrador.docx",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "draft": true,
+      "title": "Oferta DOCX/PDF generada en estado BORRADOR (mock)",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-020",
+    "sequence": 20,
+    "timestamp": "2026-11-26T10:01:31Z",
+    "type": "approval.required",
+    "project_id": "DEMO-001",
+    "agent_id": "director",
+    "task_id": "t4",
+    "payload": {
+      "artifact_id": "art-offer-docx",
+      "title": "Aprobación humana requerida antes de emitir la oferta",
+      "price_band_label": "42.000 € – 58.000 € (pendiente de validación comercial)",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-021",
+    "sequence": 21,
+    "timestamp": "2026-11-26T10:01:32Z",
+    "type": "run.paused",
+    "project_id": "DEMO-001",
+    "agent_id": "director",
+    "task_id": "t4",
+    "payload": {
+      "reason": "waiting_offer_approval",
+      "title": "Checkpoint guardado; sin consumo de tokens durante la espera",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-022",
+    "sequence": 22,
+    "timestamp": "2026-11-26T10:01:50Z",
+    "type": "approval.resolved",
+    "project_id": "DEMO-001",
+    "agent_id": null,
+    "task_id": "t4",
+    "payload": {
+      "decision": "approve",
+      "title": "Oferta aprobada por Dirección humana",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-023",
+    "sequence": 23,
+    "timestamp": "2026-11-26T10:01:51Z",
+    "type": "run.resumed",
+    "project_id": "DEMO-001",
+    "agent_id": "director",
+    "task_id": null,
+    "payload": {
+      "title": "Ejecución reanudada sin repetir tareas previas",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-024",
+    "sequence": 24,
+    "timestamp": "2026-11-26T10:01:52Z",
+    "type": "task.completed",
+    "project_id": "DEMO-001",
+    "agent_id": "offers",
+    "task_id": "t4",
+    "payload": {
+      "title": "Oferta aprobada y consolidada",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-025",
+    "sequence": 25,
+    "timestamp": "2026-11-26T10:01:54Z",
+    "type": "task.started",
+    "project_id": "DEMO-001",
+    "agent_id": "delivery",
+    "task_id": "t5",
+    "payload": {
+      "title": "Generando plan de proyecto determinista (paralelo con Facturación)",
+      "deterministic": true,
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-026",
+    "sequence": 26,
+    "timestamp": "2026-11-26T10:01:54Z",
+    "type": "task.started",
+    "project_id": "DEMO-001",
+    "agent_id": "billing",
+    "task_id": "t6",
+    "payload": {
+      "title": "Calculando aging y borrador de factura determinista (paralelo con Proyectos)",
+      "deterministic": true,
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-027",
+    "sequence": 27,
+    "timestamp": "2026-11-26T10:02:02Z",
+    "type": "artifact.created",
+    "project_id": "DEMO-001",
+    "agent_id": "delivery",
+    "task_id": "t5",
+    "payload": {
+      "artifact_id": "art-plan-pdf",
+      "name": "plan-proyecto-nortia-borrador.pdf",
+      "mime": "application/pdf",
+      "draft": true,
+      "title": "Plan de proyecto PDF generado (mock)",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-028",
+    "sequence": 28,
+    "timestamp": "2026-11-26T10:02:03Z",
+    "type": "task.completed",
+    "project_id": "DEMO-001",
+    "agent_id": "delivery",
+    "task_id": "t5",
+    "payload": {
+      "title": "Plan de proyecto completado",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-029",
+    "sequence": 29,
+    "timestamp": "2026-11-26T10:02:04Z",
+    "type": "artifact.created",
+    "project_id": "DEMO-001",
+    "agent_id": "billing",
+    "task_id": "t6",
+    "payload": {
+      "artifact_id": "art-invoice-pdf",
+      "name": "factura-borrador-nortia.pdf",
+      "mime": "application/pdf",
+      "draft": true,
+      "posted": false,
+      "title": "Borrador de factura PDF (BORRADOR · NO CONTABILIZADO, mock)",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-030",
+    "sequence": 30,
+    "timestamp": "2026-11-26T10:02:05Z",
+    "type": "task.completed",
+    "project_id": "DEMO-001",
+    "agent_id": "billing",
+    "task_id": "t6",
+    "payload": {
+      "title": "Informe de aging y borrador de factura completados",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-031",
+    "sequence": 31,
+    "timestamp": "2026-11-26T10:02:07Z",
+    "type": "task.started",
+    "project_id": "DEMO-001",
+    "agent_id": "designer",
+    "task_id": "t7",
+    "payload": {
+      "title": "Preparando presentación ejecutiva de 6 diapositivas",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-032",
+    "sequence": 32,
+    "timestamp": "2026-11-26T10:02:38Z",
+    "type": "artifact.created",
+    "project_id": "DEMO-001",
+    "agent_id": "designer",
+    "task_id": "t7",
+    "payload": {
+      "artifact_id": "art-slides-pptx",
+      "name": "comite-nortia-industrial.pptx",
+      "mime": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "title": "Presentación PPTX de 6 diapositivas generada (mock)",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-033",
+    "sequence": 33,
+    "timestamp": "2026-11-26T10:02:40Z",
+    "type": "task.completed",
+    "project_id": "DEMO-001",
+    "agent_id": "designer",
+    "task_id": "t7",
+    "payload": {
+      "title": "Presentación completada",
+      "synthetic": true
+    }
+  },
+  {
+    "event_id": "mock-034",
+    "sequence": 34,
+    "timestamp": "2026-11-26T10:02:45Z",
     "type": "project.completed",
     "project_id": "DEMO-001",
     "agent_id": "director",
     "task_id": null,
     "payload": {
-      "title": "Proyecto MOCK completado",
+      "title": "Ciclo completo MOCK finalizado con aprobación humana registrada",
+      "artifact_count": 5,
       "synthetic": true
     }
   }

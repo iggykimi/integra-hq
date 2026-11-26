@@ -1,0 +1,24 @@
+{
+  "objective": "Diseñar una arquitectura de datos de referencia sobre Microsoft Fabric sin preparar oferta ni presentación",
+  "assumptions": [
+    "Datos sintéticos de la demo",
+    "El cliente no solicita oferta comercial ni presentación ejecutiva",
+    "Sin permisos ni capacidades Fabric confirmadas en entorno de producción"
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "agent": "consultant",
+      "instruction": "Extraer requisitos funcionales y no funcionales, supuestos, riesgos y preguntas abiertas para el escenario Microsoft Fabric.",
+      "dependsOn": []
+    },
+    {
+      "id": "t2",
+      "agent": "architect",
+      "instruction": "Diseñar la arquitectura propuesta de Microsoft Fabric (máximo 10 nodos y 15 enlaces) y generar el diagrama SVG validado.",
+      "dependsOn": [
+        "t1"
+      ]
+    }
+  ]
+}

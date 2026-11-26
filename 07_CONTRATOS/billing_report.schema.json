@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BillingReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "account_id",
+    "as_of",
+    "invoices_summary",
+    "aging_buckets_eur",
+    "discrepancies",
+    "draft_invoice",
+    "source_refs"
+  ],
+  "properties": {
+    "status": { "const": "BORRADOR · NO CONTABILIZADO" },
+    "account_id": { "type": "string", "minLength": 1 },
+    "as_of": { "type": "string", "format": "date" },
+    "invoices_summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "invoice_id",
+          "contract_id",
+          "milestone_ref",
+          "issue_date",
+          "due_date",
+          "amount_eur",
+          "status",
+          "days_overdue"
+        ],
+        "properties": {
+          "invoice_id": { "type": "string" },
+          "contract_id": { "type": "string" },
+          "milestone_ref": { "type": "string" },
+          "issue_date": { "type": "string", "format": "date" },
+          "due_date": { "type": "string", "format": "date" },
+          "amount_eur": { "type": "number", "minimum": 0 },
+          "status": { "enum": ["paid", "open", "overdue"] },
+          "days_overdue": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "aging_buckets_eur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "days_1_30", "days_31_60", "days_over_60"],
+      "properties": {
+        "current": { "type": "number", "minimum": 0 },
+        "days_1_30": { "type": "number", "minimum": 0 },
+        "days_31_60": { "type": "number", "minimum": 0 },
+        "days_over_60": { "type": "number", "minimum": 0 }
+      }
+    },
+    "discrepancies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "description", "severity", "source_ref"],
+        "properties": {
+          "code": { "type": "string" },
+          "description": { "type": "string" },
+          "severity": { "enum": ["warning", "blocking"] },
+          "source_ref": { "type": "string" }
+        }
+      }
+    },
+    "draft_invoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "draft_number",
+        "milestone_ref",
+        "service_ids",
+        "amount_band_eur",
+        "tax_note",
+        "posted",
+        "sent",
+        "blocked_by_discrepancy"
+      ],
+      "properties": {
+        "draft_number": { "type": "string" },
+        "milestone_ref": { "type": "string" },
+        "service_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "amount_band_eur": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["min", "max", "label"],
+          "properties": {
+            "min": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 0 },
+            "label": { "type": "string" }
+          }
+        },
+        "tax_note": { "type": "string" },
+        "posted": { "const": false },
+        "sent": { "const": false },
+        "blocked_by_discrepancy": { "type": "boolean" }
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ConsultantBriefing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "summary",
+    "explicit_needs",
+    "inferred_needs",
+    "requirements",
+    "assumptions",
+    "risks",
+    "phases",
+    "open_questions",
+    "success_criteria",
+    "sources"
+  ],
+  "properties": {
+    "summary": { "type": "string", "minLength": 1 },
+    "explicit_needs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "inferred_needs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "description", "priority"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "enum": ["functional", "non_functional"] },
+          "description": { "type": "string" },
+          "priority": { "enum": ["must", "should", "could"] }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "impact", "mitigation"],
+        "properties": {
+          "description": { "type": "string" },
+          "impact": { "enum": ["low", "medium", "high"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "objective", "optional"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "objective": { "type": "string" },
+          "optional": { "type": "boolean" }
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "success_criteria": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  }
+}

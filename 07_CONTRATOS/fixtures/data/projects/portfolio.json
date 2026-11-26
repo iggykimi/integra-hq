@@ -1,0 +1,93 @@
+{
+  "synthetic": true,
+  "as_of": "2026-11-26",
+  "source_id": "PORTFOLIO-SYNTH-2026",
+  "disclaimer": "Portfolio de proyectos sintético para demo de hackathon. Sin empleados ni proyectos reales.",
+  "projects": [
+    {
+      "project_id": "PRJ-NORTIA-2025-01",
+      "account_id": "ACC-NORTIA-001",
+      "name": "Fase 1 · Consolidación inicial de datos de planta",
+      "status": "completed",
+      "closed_date": "2025-12-15",
+      "lessons_learned": [
+        "La validación temprana de accesos al ERP reduce en dos semanas el arranque.",
+        "La implicación de usuarios clave de planta acelera la adopción del cuadro de mando."
+      ]
+    }
+  ],
+  "phase_templates": [
+    {
+      "phase_id": "F1",
+      "service_id": "SRV-DATA-DISC",
+      "name": "Fase 1 · Descubrimiento y requisitos",
+      "duration_weeks": 2,
+      "estimated_hours": 60,
+      "milestone": {
+        "id": "H1",
+        "name": "Aprobación de alcance funcional y matriz de fuentes",
+        "target_week": 2,
+        "exit_criteria": "Documento de requisitos y accesos validados por Dirección de Operaciones."
+      }
+    },
+    {
+      "phase_id": "F2",
+      "service_id": "SRV-DATA-FABRIC-ARCH",
+      "name": "Fase 2 · Arquitectura Microsoft Fabric",
+      "duration_weeks": 3,
+      "estimated_hours": 110,
+      "milestone": {
+        "id": "H2",
+        "name": "Validación de arquitectura y modelo semántico",
+        "target_week": 5,
+        "exit_criteria": "Diagrama de arquitectura aprobado y entorno piloto operativo."
+      }
+    },
+    {
+      "phase_id": "F3",
+      "service_id": "SRV-DATA-PBI-IMP",
+      "name": "Fase 3 · Implantación de pipelines y Power BI",
+      "duration_weeks": 5,
+      "estimated_hours": 210,
+      "milestone": {
+        "id": "H3",
+        "name": "Puesta en servicio de cuadros de mando",
+        "target_week": 10,
+        "exit_criteria": "Pruebas de aceptación funcional superadas con datos validados."
+      }
+    },
+    {
+      "phase_id": "F4",
+      "service_id": "SRV-TAL-FORM-DATA",
+      "name": "Fase 4 · Formación y transferencia (opcional)",
+      "duration_weeks": 2,
+      "estimated_hours": 48,
+      "milestone": {
+        "id": "H4",
+        "name": "Cierre de capacitación de usuarios clave",
+        "target_week": 12,
+        "exit_criteria": "Cuatro (4) sesiones impartidas y guía operativa entregada."
+      }
+    }
+  ],
+  "standard_risks": [
+    {
+      "id": "RSK-01",
+      "description": "Retraso en la provisión de accesos de lectura al ERP y al sistema MES.",
+      "impact": "high",
+      "mitigation": "Solicitar credenciales de lectura y validar conectividad durante la semana 1."
+    },
+    {
+      "id": "RSK-02",
+      "description": "Capacidad de Microsoft Fabric no dimensionada ni contratada al inicio.",
+      "impact": "medium",
+      "mitigation": "Confirmar licenciamiento en el hito H1 antes de iniciar la carga masiva."
+    },
+    {
+      "id": "RSK-03",
+      "description": "Baja adopción de los cuadros de mando por falta de formación específica.",
+      "impact": "medium",
+      "mitigation": "Incluir la fase opcional de formación práctica y sesiones de transferencia."
+    }
+  ]
+}

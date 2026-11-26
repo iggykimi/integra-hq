@@ -1,0 +1,66 @@
+{
+  "synthetic": true,
+  "as_of": "2026-11-26",
+  "stale_threshold_days": 30,
+  "source_id": "CRM-FIXTURE-2026",
+  "disclaimer": "Datos ficticios de demostración para hackathon. No representan ningún cliente real de Integra.",
+  "accounts": [
+    {
+      "account_id": "ACC-NORTIA-001",
+      "legal_name": "Nortia Industrial S.L.",
+      "short_name": "Nortia Industrial",
+      "tax_id": "B00000001",
+      "sector": "Fabricación de componentes industriales",
+      "location": "Zaragoza, España",
+      "primary_contact": {
+        "role": "Dirección de Operaciones",
+        "email": "direccion.operaciones@nortia-industrial.example"
+      },
+      "relationship_summary": "Cliente ficticio con proyecto previo de consolidación de datos de planta completado en 2025 (PRJ-NORTIA-2025-01).",
+      "opportunities": [
+        {
+          "id": "OPP-NORTIA-2026-01",
+          "name": "Ampliación de plataforma de datos industrial en Microsoft Fabric y cuadro de mando",
+          "stage": "Propuesta técnica",
+          "status": "open",
+          "amount_eur": 48000,
+          "probability": 0.65,
+          "last_contact_date": "2026-11-18",
+          "next_step": "Preparar oferta de ampliación con opción de formación para usuarios clave",
+          "source_ref": "CRM-OPP-2026-01"
+        },
+        {
+          "id": "OPP-NORTIA-2026-02",
+          "name": "Automatización de seguimiento comercial en Dynamics 365 Sales",
+          "stage": "Descubrimiento",
+          "status": "stale",
+          "amount_eur": 24000,
+          "probability": 0.25,
+          "last_contact_date": "2026-09-20",
+          "next_step": "Recualificar prioridad con Dirección Comercial tras cierre de Q4",
+          "source_ref": "CRM-OPP-2026-02"
+        }
+      ],
+      "recent_activities": [
+        {
+          "id": "CRM-ACT-001",
+          "date": "2026-11-18",
+          "type": "meeting",
+          "summary": "Reunión de seguimiento con Dirección de Operaciones: solicitan ampliar ingesta ERP/MES a dos líneas adicionales y valorar formación al equipo de planta."
+        },
+        {
+          "id": "CRM-ACT-002",
+          "date": "2026-11-10",
+          "type": "note",
+          "summary": "Revisión interna de estado de licencias Microsoft: capacidad Fabric pendiente de confirmar por IT del cliente."
+        },
+        {
+          "id": "CRM-ACT-003",
+          "date": "2026-09-20",
+          "type": "call",
+          "summary": "Conversación preliminar sobre CRM comercial; aplazada hasta finalizar la ampliación de analítica."
+        }
+      ]
+    }
+  ]
+}

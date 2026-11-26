@@ -1,0 +1,94 @@
+{
+  "synthetic": true,
+  "as_of": "2026-11-26",
+  "source_id": "CATALOG-SYNTH-2026",
+  "disclaimer": "Catálogo ficticio de hackathon. No corresponde a tarifas oficiales de Integra Tecnología.",
+  "validation_status": "pendiente de validación comercial",
+  "services": [
+    {
+      "service_id": "SRV-DATA-DISC",
+      "area": "Consultoría",
+      "name": "Descubrimiento funcional, inventario de fuentes y gobierno del dato",
+      "duration_weeks": 2,
+      "estimated_hours": 60,
+      "optional": false,
+      "price_band_eur": {
+        "min": 6000,
+        "max": 8500,
+        "label": "6.000 € – 8.500 €"
+      },
+      "deliverables": [
+        "Documento de requisitos funcionales y no funcionales",
+        "Inventario de fuentes ERP/MES y matriz de riesgos"
+      ]
+    },
+    {
+      "service_id": "SRV-DATA-FABRIC-ARCH",
+      "area": "Data&AI",
+      "name": "Diseño de arquitectura de datos en Microsoft Fabric y modelo OneLake",
+      "duration_weeks": 3,
+      "estimated_hours": 110,
+      "optional": false,
+      "price_band_eur": {
+        "min": 12000,
+        "max": 16500,
+        "label": "12.000 € – 16.500 €"
+      },
+      "deliverables": [
+        "Arquitectura de referencia y diagrama técnico SVG",
+        "Diseño de modelo semántico y políticas de seguridad"
+      ]
+    },
+    {
+      "service_id": "SRV-DATA-PBI-IMP",
+      "area": "Data&AI",
+      "name": "Implantación de pipelines de datos y cuadros de mando Power BI",
+      "duration_weeks": 5,
+      "estimated_hours": 210,
+      "optional": false,
+      "price_band_eur": {
+        "min": 18000,
+        "max": 25000,
+        "label": "18.000 € – 25.000 €"
+      },
+      "deliverables": [
+        "Pipelines productivos en entorno validado",
+        "Cuadros de mando operativos y guía de explotación"
+      ]
+    },
+    {
+      "service_id": "SRV-TAL-FORM-DATA",
+      "area": "Talento",
+      "name": "Formación práctica y adopción para usuarios clave de planta y analítica",
+      "duration_weeks": 2,
+      "estimated_hours": 48,
+      "optional": true,
+      "price_band_eur": {
+        "min": 6000,
+        "max": 8000,
+        "label": "6.000 € – 8.000 €"
+      },
+      "deliverables": [
+        "Cuatro (4) sesiones formativas prácticas",
+        "Guía rápida de autoservicio analítico y transferencia"
+      ]
+    },
+    {
+      "service_id": "SRV-SOL-CRM-INT",
+      "area": "Soluciones de Negocio",
+      "name": "Integración inicial de señales comerciales con CRM",
+      "duration_weeks": 3,
+      "estimated_hours": 90,
+      "optional": true,
+      "price_band_eur": {
+        "min": 9500,
+        "max": 13500,
+        "label": "9.500 € – 13.500 €"
+      },
+      "deliverables": [
+        "Conector de lectura y cuadro de pipeline comercial",
+        "Manual de operación y control de permisos"
+      ]
+    }
+  ]
+}

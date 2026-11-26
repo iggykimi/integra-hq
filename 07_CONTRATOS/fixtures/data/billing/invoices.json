@@ -1,0 +1,50 @@
+{
+  "synthetic": true,
+  "as_of": "2026-11-26",
+  "source_id": "BILLING-SYNTH-2026",
+  "disclaimer": "Registros de facturación ficticios de hackathon. Ninguna factura es real ni está contabilizada.",
+  "contracts": [
+    {
+      "contract_id": "CTR-NORTIA-2025-01",
+      "account_id": "ACC-NORTIA-001",
+      "payment_terms_days": 30,
+      "tax_note": "IVA no incluido (tipo aplicable pendiente de validación fiscal)",
+      "milestone_billing_rule": "30% al arranque (H1), 40% en validación técnica (H2), 30% en cierre (H3/H4)"
+    }
+  ],
+  "invoices": [
+    {
+      "invoice_id": "FAC-SYN-2026-0101",
+      "contract_id": "CTR-NORTIA-2025-01",
+      "account_id": "ACC-NORTIA-001",
+      "milestone_ref": "PRJ-NORTIA-2025-01 / Cierre",
+      "issue_date": "2026-06-30",
+      "due_date": "2026-07-30",
+      "amount_eur": 14500,
+      "status": "paid",
+      "paid_date": "2026-07-24"
+    },
+    {
+      "invoice_id": "FAC-SYN-2026-0204",
+      "contract_id": "CTR-NORTIA-2025-01",
+      "account_id": "ACC-NORTIA-001",
+      "milestone_ref": "Soporte evolutivo Q3",
+      "issue_date": "2026-09-22",
+      "due_date": "2026-10-22",
+      "amount_eur": 12000,
+      "status": "overdue",
+      "paid_date": null
+    },
+    {
+      "invoice_id": "FAC-SYN-2026-0289",
+      "contract_id": "CTR-NORTIA-2025-01",
+      "account_id": "ACC-NORTIA-001",
+      "milestone_ref": "Soporte evolutivo Q4",
+      "issue_date": "2026-11-10",
+      "due_date": "2026-12-10",
+      "amount_eur": 8500,
+      "status": "open",
+      "paid_date": null
+    }
+  ]
+}

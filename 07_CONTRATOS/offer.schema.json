@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CommercialOffer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "client_id",
+    "client_name",
+    "opportunity_id",
+    "title",
+    "as_of",
+    "valid_until",
+    "context",
+    "objectives",
+    "scope",
+    "exclusions",
+    "solution",
+    "architecture_artifact_id",
+    "phases",
+    "team",
+    "deliverables",
+    "assumptions",
+    "pricing_lines",
+    "legal_clauses_status",
+    "source_refs"
+  ],
+  "properties": {
+    "status": { "const": "BORRADOR" },
+    "client_id": { "type": "string", "minLength": 1 },
+    "client_name": { "type": "string", "minLength": 1 },
+    "opportunity_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+    "as_of": { "type": "string", "format": "date" },
+    "valid_until": { "type": "string", "format": "date" },
+    "context": { "type": "string", "minLength": 1 },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "scope": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "exclusions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "solution": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "architecture_artifact_id": {
+      "type": ["string", "null"]
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "duration_weeks", "optional", "included"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "duration_weeks": { "type": "integer", "minimum": 1 },
+          "optional": { "type": "boolean" },
+          "included": { "type": "boolean" }
+        }
+      }
+    },
+    "team": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "responsibility"],
+        "properties": {
+          "role": { "type": "string" },
+          "responsibility": { "type": "string" }
+        }
+      }
+    },
+    "deliverables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "format", "acceptance_criteria"],
+        "properties": {
+          "name": { "type": "string" },
+          "format": { "type": "string" },
+          "acceptance_criteria": { "type": "string" }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "pricing_lines": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["service_id", "service_name", "price_band_eur", "validation_status"],
+        "properties": {
+          "service_id": { "type": "string", "minLength": 1 },
+          "service_name": { "type": "string", "minLength": 1 },
+          "price_band_eur": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["min", "max", "label"],
+            "properties": {
+              "min": { "type": "number", "minimum": 0 },
+              "max": { "type": "number", "minimum": 0 },
+              "label": { "type": "string" }
+            }
+          },
+          "validation_status": { "const": "pendiente de validación comercial" }
+        }
+      }
+    },
+    "legal_clauses_status": {
+      "enum": ["approved_source", "PENDIENTE"]
+    },
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  }
+}
