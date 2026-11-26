@@ -91,7 +91,7 @@ No se conectan CRM ni ERP reales en el hackathon. No se envían correos ni se co
 - 8 roles; los agentes pueden compartir zona cuando no trabajan a la vez.
 - La escena debe leerse en 3 segundos: quién trabaja, en qué y qué está esperando.
 - Estados visibles: trabajando, esperando aprobación, bloqueado, completado, error.
-- El renderer (2D, 3D o prerender) se decide tras el spike A/B/C; el alcance no depende de esa decisión.
+- **Renderer decidido (26/11/2026):** **3D ortográfico con React Three Fiber + Drei** (ganador del spike `spikes/renderer-ab/`), con comentarios operativos 3D y movimiento por waypoints derivado de eventos reales. No construir un segundo renderer en paralelo.
 
 ## Modelo y despliegue
 

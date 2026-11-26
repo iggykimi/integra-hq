@@ -1,57 +1,118 @@
 # Integra HQ · Real Hack 2026
-**Dossier de investigación y arranque de proyecto | 26/11/2026**
+**Dossier de arranque, spike visual 3D y plan de ruta del equipo | 26/11/2026**
 
-> Una empresa agéntica real, visible como una oficina viva. Zaragoza, 2029: una interpretación creativa del futuro de Integra.
+> Una empresa agéntica real, visible como una oficina 3D viva. Zaragoza, 2029: una interpretación creativa del futuro de Integra.
 
-Este paquete consolida las conversaciones de concepto, alcance, identidad de Integra, arquitectura agéntica, experimentación visual y búsqueda de recursos. Es una base de trabajo para el equipo y para Claude Code/Codex, **no una aplicación multiagente ya desplegada**.
+Este repositorio consolida la investigación, el alcance del MVP, los contratos JSON Schema, los fixtures sintéticos, un **spike interactivo 3D (React Three Fiber)** ya funcional y una **demo CLI mock/live para Azure OpenAI (`gpt-6-luna`)**. Todavía **no** es la aplicación completa desplegada: es la base común para alinearnos como equipo y pasar directamente a construir.
 
-## Cómo utilizarlo
+---
 
-1. Lee `00_PROYECTO/01_RETO_Y_VISION.md` y `02_ALCANCE_MVP.md`: son el marco de decisión.
-2. Consulta `01_INVESTIGACION/` para fuentes primarias, repositorios y recursos gratuitos. El CSV de assets es la lista operativa de descargas.
-3. Abre `02_DISENO/` para las referencias de marca, composición, brief artístico y los experimentos A/B/C. La representación gráfica definitiva sigue abierta.
-4. Revisa `03_TECNICA/` y `04_AGENTES/` antes de construir. Los contratos y prompts son propuestas editables.
-5. Ejecuta la demostración local abriendo `06_PROTOTIPO_OFFLINE/index.html` en el navegador. No necesita instalar nada ni usar una API. **Es una simulación de estados con datos sintéticos**, no prueba de ejecución de LLM. Es el mock histórico de 4 agentes; el MVP actual tiene 8 roles y aprobación humana.
-6. Usa `05_DESARROLLO/` para repartir trabajo, probar el flujo y ensayar la demo.
+## 1. Decisiones ya cerradas
 
-## Decisiones firmes
+- **Historia y alcance:** un **ciclo completo de negocio** en **180 segundos** sobre cliente ficticio (**Nortia Industrial**): señal CRM → pregunta humana de alcance → requisitos + arquitectura SVG → oferta DOCX/PDF → **pausa para aprobación humana** → plan de proyecto PDF + borrador de factura PDF → presentación PPTX (6 diapositivas). Incluye un segundo flujo corto (solo arquitectura Microsoft Fabric) para demostrar delegación variable.
+- **Equipo digital:** **1 director + 7 especialistas** (`crm`, `consultant`, `architect`, `offers`, `delivery`, `billing`, `designer`) en **5 zonas** (Dirección, Comercial, Soluciones, Comunicación, Operación). `delivery` y `billing` entran deterministas para garantizar velocidad y fiabilidad.
+- **Renderer elegido (tras spike A vs B):** **3D ortográfico con React Three Fiber + Three.js + Drei** (`spikes/renderer-ab/`), con globos de comentarios operativos en 3D (`<Html>`) y movimiento por waypoints ligado a eventos reales. No se construyen renderers alternativos en paralelo.
+- **Modelo base confirmado:** **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra (1,1M de contexto, baja latencia y coste), tras un adaptador de proveedor que permite subir dirección/arquitectura a `gpt-6.1-sol` o `gpt-6.2-sol` si las pruebas lo piden.
+- **Reglas no negociables:**
+  - Sin secretos en el frontend ni en el repositorio; sin conexión a CRM/ERP ni correos reales.
+  - Los números, fechas, bandas de precio y aging se calculan en código contra datos versionados; los documentos se generan desde plantillas deterministas (nunca ejecutando código del LLM).
+  - Modos **`LIVE` / `REPLAY` / `MOCK`** siempre visibles; jamás simular un éxito en `live`.
+  - Sin compra de assets: solo originales propios o recursos CC0/MIT/CC BY auditados en `08_RECURSOS/ASSETS.md`.
 
-- Un director y siete especialistas; cinco zonas; una demo de 180 segundos.
-- Un ciclo completo: señal de oportunidad, oferta, aprobación humana, proyecto y borrador de factura.
-- La coordinación y los documentos deben ser reales; las animaciones deben responder a eventos verificables.
-- La persona interviene al menos una vez y aprueba la oferta antes de que salga.
-- La oferta, el plan de proyecto y la factura se entregan en DOCX/PDF; el JSON es la representación interna validable.
-- No comprar assets. Priorizar CC0, MIT para código y CC BY con atribución; otros recursos gratuitos solo si la licencia permite el uso concreto.
-- React/TypeScript y un backend sencillo; el renderer queda desacoplado hasta comparar 2D, 3D y prerenderizado.
-- Un flujo principal end-to-end y una segunda petición para probar delegación variable, con contingencia replay claramente etiquetada.
-- No duplicar una plataforma de agentes existente, ni desarrollar un juego completo.
+---
 
-## Qué incluye y qué no
+## 2. Cómo probarlo hoy en local (2 minutos)
 
-Incluye documentación, catálogo de recursos con enlaces, checklist de licencias, definición de agentes, prompts, esquemas JSON, escenario ficticio, fixture de eventos, modelo visual conceptual original, kit de marca con los SVG oficiales del logo, replay HTML offline y guías de implementación. No incluye la presentación corporativa completa, fotos de stock, iconos propietarios ni logos de partners; tampoco modelos 3D descargados. Se facilitan las fuentes oficiales y los pasos de adquisición. No se incluyen fuentes de pago, claves, cuentas, acceso interno ni recursos Azure creados. La infraestructura y el consumo de LLM podrían tener coste; «gratis» significa aquí **sin compra de recursos gráficos ni herramientas de desarrollo obligatorias**. El modo offline sí funciona sin consumo de API.
+Requisitos: Node LTS (`>=20`) y `pnpm` (solo para el spike 3D).
 
-## Índice
+1. **Ver el spike visual 3D ganador (1 escritorio, comentarios 3D y caminar a pizarra):**
+   ```bash
+   cd spikes/renderer-ab
+   pnpm install
+   pnpm dev
+   ```
+   Abrir **`http://localhost:5173`** (seleccionar **Solo B (3D R3F)** para verlo a pantalla completa, probar estados, **Esperando aprobación** con botones en el globo y **Probar caminar (pizarra)**).
+
+2. **Probar el flujo de planificación y cálculos deterministas en CLI (sin dependencias):**
+   ```bash
+   # Mock ciclo completo con formación (42.000 € – 58.000 €, 428 h)
+   node scripts/demo-luna-plan.mjs
+
+   # Mock sin formación (36.000 € – 50.000 €, 380 h) y flujo secundario Fabric
+   node scripts/demo-luna-plan.mjs --training=no
+   node scripts/demo-luna-plan.mjs --scenario=arch
+   ```
+   Para probarlo en **`--live`** contra el deployment de **Azure OpenAI `gpt-6-luna`**, copia `.env.example` a `.env` (ignorado por git), rellena `AZURE_OPENAI_ENDPOINT` y `AZURE_OPENAI_API_KEY` y lanza:
+   ```bash
+   node scripts/demo-luna-plan.mjs --live
+   node scripts/demo-luna-plan.mjs --live --scenario=arch
+   ```
+
+3. **Validar contratos, DAGs, 34 eventos y fixtures sintéticos:**
+   ```bash
+   node scripts/validate-dossier.mjs
+   ```
+
+---
+
+## 3. Plan de ruta (hoja de ruta de implementación)
+
+| Fase | Objetivo | Entregable concreto | Estado |
+|---|---|---|---|
+| **Fase 0 · Base y decisiones** | Alcance 8 agentes, contratos JSON Schema, fixtures de Nortia Industrial, validación automática, elección de 3D R3F y `gpt-6-luna`. | `07_CONTRATOS/`, `spikes/renderer-ab/`, `scripts/` | **Hecho** |
+| **Fase 1 · Backend vertical + documentos** | API Fastify + orquestador DAG (máx. 8 tareas, concurrencia 2) + checkpoint de pausa/reanudación (`run.paused/resumed`) + adaptador Azure OpenAI `gpt-6-luna` + generadores deterministas DOCX/PDF/SVG/PPTX. | `apps/api/`, `packages/core/`, `packages/documents/` funcionando en `mock` y `live` | **Siguiente** |
+| **Fase 2 · Oficina 3D (5 zonas, 8 roles)** | Evolucionar el spike R3F a 1 planta con 5 zonas, 8 puestos, comentarios operativos 3D, movimiento por waypoints conectado al polling de eventos, panel de pregunta/aprobación e inspector. | `apps/web/` 100% dirigido por eventos reales | Pendiente |
+| **Fase 3 · Persistencia, pruebas y ensayo 180 s** | Snapshot + reconexión sin repetir tareas, suite funcional F1–F16 (`05_DESARROLLO/03_PRUEBAS.md`), medición de latencia real con `gpt-6-luna` y grabación de un `replay` real etiquetado. | Demo ensayada de 180 s + contingencia `replay` | Pendiente |
+| **Fase 4 · Despliegue y extras (solo si P0 pasa)** | Azure Container Apps + Blob Storage en Resource Group de Integra (local como contingencia), panel de costes/tokens, easter egg 1986 o trigger Outlook P1. | URL de demo + extras opcionales | Opcional (P1) |
+
+**Orden de recorte si aprieta el tiempo** (detalle en `05_DESARROLLO/01_PLAN.md`): (1) PPTX → resumen visual (la oferta DOCX/PDF **no** se recorta); (2) `delivery` y `billing` 100% deterministas; (3) segunda petición como plan mostrado; (4) extras P1 fuera. **Nunca se recorta:** aprobación humana con pausa/reanudación, trazabilidad, oferta real y estados de error honestos.
+
+---
+
+## 4. Dudas y preguntas abiertas para hablar en equipo
+
+Dejamos aquí los puntos concretos que conviene cerrar entre todos antes de arrancar la Fase 1:
+
+1. **Estilo 3D de personajes y mobiliario (Candidato B):**
+   - ¿Seguimos puliendo el **estilo 3D estilizado propio** del spike (control total en código, peso ligero, cero problemas de rigging/licencias) o dedicamos tiempo a importar **GLB CC0 gratuitos** de `08_RECURSOS/assets.csv` (Kenney/MrEliptik para muebles y Quaternius Standard para personajes)?
+2. **Validación real de `gpt-6-luna` como Director:**
+   - Al ejecutar `node scripts/demo-luna-plan.mjs --live` con las credenciales de la suscripción de Integra: ¿`gpt-6-luna` devuelve planes DAG impecables en los dos escenarios (ciclo completo y solo Fabric) con latencia cómoda, o conviene subir solo el `director` (o `architect`) a `gpt-6.1-sol` / `gpt-6.2-sol`?
+3. **Catálogo de servicios y plantilla de oferta:**
+   - ¿Nos sirven las 5 líneas y bandas sintéticas de `07_CONTRATOS/fixtures/data/catalog/services.json` (`36.000 € – 58.000 €`, marcadas «pendiente de validación comercial») o alguien de negocio quiere ajustar nombres, entregables o párrafos fijos de `04_AGENTES/knowledge/proposals.md`?
+4. **Reparto de bloques del equipo:**
+   - ¿Cómo nos repartimos los 4 frentes de trabajo?
+     - **A — Escena 3D y UX** (5 zonas, 8 agentes, waypoints, comentarios 3D, panel aprobación/inspector).
+     - **B — Orquestador y LLM** (Fastify, DAG, pausa/reanudación, adaptador Azure OpenAI `gpt-6-luna`, eventos).
+     - **C — Documentos deterministas** (oferta DOCX+PDF directo desde JSON, plan PDF, factura borrador PDF, SVG, PPTX).
+     - **D — Pruebas, guion 180 s e infraestructura** (F1–F16, medición latencia/tokens, replay real y Azure).
+5. **Despliegue en Azure vs. demo local:**
+   - ¿Tenemos permisos y cuota confirmados en el Resource Group de Integra para desplegar Container Apps + Blob Storage, o acordamos ir con **backend/frontend local + Azure OpenAI `gpt-6-luna` en nube** para eliminar riesgo de red/infraestructura el día de la demo?
+6. **Permisos de marca y extras P1:**
+   - ¿Confirmamos que el permiso de uso del logo SVG de `08_RECURSOS/brand/` cubre el repositorio/demo del hackathon (siempre con la nota «no es un producto oficial»)?
+   - ¿Coincidimos en dejar **Outlook (Power Automate/Graph)** y la **intro de 7 s** estrictamente en P1 hasta tener P0 cerrado?
+7. **Criterio del jurado y duración exacta:**
+   - ¿Se confirman los **180 segundos** de demo o hay otro formato de presentación/preguntas? ¿Qué pesa más en la evaluación (arquitectura agéntica real, impacto visual 3D, entregables descargables o encaje con el ecosistema Microsoft/Integra)?
+
+---
+
+## 5. Índice del repositorio
 
 | Carpeta | Contenido |
 |---|---|
-| `00_PROYECTO` | Reto, visión, MVP, ideas y decisiones |
-| `01_INVESTIGACION` | Investigación visual, empresa, recursos, repositorios, fuentes |
-| `02_DISENO` | Identidad, arte, interfaz, pipelines y pruebas |
-| `03_TECNICA` | Arquitectura, eventos, API, infraestructura, seguridad |
-| `04_AGENTES` | Prompts, catálogo, conocimiento y esquema de entregables |
-| `05_DESARROLLO` | Backlog, pruebas, demo de 3 minutos y guías para IA |
-| `06_PROTOTIPO_OFFLINE` | Replay visual original y autocontenido |
-| `07_CONTRATOS` | JSON Schema (8 agentes y entregables), fixtures sintéticos y tipos TypeScript |
-| `08_RECURSOS` | Catálogo CSV, instrucciones de adquisición, control de licencias |
-| `spikes/renderer-ab` | Spike comparativo de 1 escritorio: Candidato A (2D isométrico) vs Candidato B (3D R3F) |
-| `scripts` | Validador de contratos (`validate-dossier.mjs`) y demo CLI mock/live (`demo-luna-plan.mjs`) |
+| `00_PROYECTO` | Reto, visión, alcance MVP (P0/P1) y registro de decisiones (ADR) |
+| `01_INVESTIGACION` | Empresa/DAT Alierta, referentes, alternativas visuales, fuentes e informe 2026 (Ignite 2026, MCP/A2A/AG-UI, EU AI Act/AESIA) |
+| `02_DISENO` | Dirección artística, UX 1080p, pipelines gratuitos y resultado del spike A vs B |
+| `03_TECNICA` | Arquitectura, API/eventos, herramientas/entregables, despliegue y seguridad (OWASP Agentic / OTel GenAI) |
+| `04_AGENTES` | Registro (`agents.json`), esquema de empresa agéntica, prompts de los 8 roles y conocimiento base |
+| `05_DESARROLLO` | Plan de tickets, guion cronometrado de 180 s, matriz de pruebas F1–F16 y prompts de desarrollo |
+| `06_PROTOTIPO_OFFLINE` | Prototipo HTML SVG histórico de 4 agentes (referencia UX sin dependencias) |
+| `07_CONTRATOS` | 9 JSON Schema Draft 2020-12, `types.ts`, 2 planes DAG, 34 eventos mock y 4 fixtures sintéticos de negocio |
+| `08_RECURSOS` | Catálogo CSV de assets libres, control de licencias y kit oficial de marca (`brand/`) |
+| `spikes/renderer-ab` | Spike interactivo 1 escritorio (2D vs **3D R3F ganador**, comentarios 3D y caminar por waypoints) |
+| `scripts` | Validador automático (`validate-dossier.mjs`) y demo CLI mock/live (`demo-luna-plan.mjs`) |
 
-La propuesta de organización de la empresa agéntica está en `04_AGENTES/02_ESQUEMA_EMPRESA_AGENTICA.md`; la investigación de mercado, Ignite 2026, protocolos (MCP/A2A/AG-UI), regulación (EU AI Act/AESIA) y modelos, en `01_INVESTIGACION/05_EMPRESA_AGENTICA_2026.md`. El kit de marca (logos, tokens y muestra visual) está en `08_RECURSOS/brand/`.
+### Qué incluye y qué no
 
-## Comprobaciones y demos rápidas en local
+Incluye documentación, contratos, fixtures sintéticos, kit de marca con los 3 SVG oficiales del logo, prototipo offline histórico, spike 3D R3F ejecutable y scripts de validación/demo. **No incluye** secretos, claves, datos de clientes reales, la presentación corporativa completa, fotos de stock, assets de pago ni servicios Azure aprovisionados. «Gratis» se refiere a no comprar assets ni software; el consumo de LLM/Azure depende de la suscripción utilizada.
 
-- Validar integridad del dossier, esquemas, DAG y fixtures (sin dependencias): `node scripts/validate-dossier.mjs`
-- Demo CLI de planificación y cálculos deterministas (`mock`, o `--live` con Azure OpenAI `gpt-6-luna` en `.env`): `node scripts/demo-luna-plan.mjs`
-- Spike visual comparativo A vs B (1 escritorio en 2D isométrico vs 3D React Three Fiber): `cd spikes/renderer-ab && pnpm install && pnpm dev`
-
-La fecha de revisión de las fuentes es 26 de noviembre de 2026. Los enlaces pueden cambiar. Se distingue entre información publicada, propuestas de diseño e hipótesis técnicas no probadas.
+*Última actualización y verificación de fuentes: 26 de noviembre de 2026.*

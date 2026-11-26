@@ -4,9 +4,9 @@
 |---|---|---|
 | Futuro edificio DAT Alierta | Identidad conceptual | Reconocimiento y narrativa, no recreación oficial. |
 | Tres plantas: dirección, tecnología, negocio | Backlog | No aporta valor suficiente a la demo actual. |
-| Oficina pixel art Habbo | Candidato A | Estilo reconocible, requiere sprites compatibles. |
-| Diorama 3D low-poly profesional | Candidato B | Importar GLB, no hacer todo con cubos. |
-| HD-2D, Blender prerenderizado | Candidato C | Cámara fija, sombras y animaciones exportadas. |
+| Oficina pixel art Habbo | Descartado tras spike | Candidato A evaluado en `spikes/renderer-ab/`; descartado frente al 3D ortográfico. |
+| Diorama 3D low-poly profesional | **Elegido (P0)** | Candidato B (React Three Fiber + Drei) elegido tras spike A vs B (26/11/2026); comentarios 3D y movimiento por waypoints validados. |
+| HD-2D, Blender prerenderizado | Descartado tras spike | No necesario al elegir 3D R3F directamente. |
 | SVG/CSS y Canvas procedural | Contingencia/experimento | Buen control, riesgo de arte genérico. |
 | Imagen generada + overlays | Contingencia | Rápido, oclusiones y modificación difíciles. |
 | Voxel | Descartado de momento | Identidad demasiado cercana a mundos de bloques. |
@@ -26,7 +26,7 @@
 
 ## Decisiones de alcance (ADR)
 
-1. Renderer: comparar A/B/C con el mismo escritorio. No decidir por una captura aislada.
+1. Renderer: **decidido Candidato B — 3D ortográfico con React Three Fiber + Drei** tras el spike comparativo de 1 escritorio (`spikes/renderer-ab/`, 26/11/2026). Incluye comentarios operativos 3D (`<Html>`) y desplazamiento por waypoints ligado a eventos; queda por decidir en equipo si se mantiene estilo 3D propio pulido o se incorporan GLB CC0 gratuitos (Kenney/MrEliptik/Quaternius).
 2. Assets: logo oficial y kit de marca; permiso para el hackathon. Resto sin compra, empezar CC0 y registrar licencia.
 3. Modelo: confirmado **Azure OpenAI con `gpt-6-luna`** en la suscripción de Integra como base de arranque para todos los roles LLM (baja latencia y coste); mantener adaptador de proveedor para poder subir director/arquitecto a `gpt-6.1-sol` o `gpt-6.2-sol` sin tocar prompts.
 4. Hosting: resource group de Integra en Azure si hay permiso; local como contingencia.
