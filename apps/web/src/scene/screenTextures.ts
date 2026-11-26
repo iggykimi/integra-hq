@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { eventLabel } from '../state/officeCopy';
 import {
   type AgentVisualProfile,
   STATE_META,
@@ -143,7 +144,7 @@ export function drawDagWhiteboard(
 
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '700 22px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('PLAN DAG · NORTIA INDUSTRIAL', 22, 37);
+  ctx.fillText('PLAN DE TRABAJO · NORTIA INDUSTRIAL', 22, 37);
 
   ctx.fillStyle = '#43C6F0';
   ctx.font = '600 14px IBM Plex Mono, monospace';
@@ -154,7 +155,7 @@ export function drawDagWhiteboard(
     t1: [36, 94, 'T1 · CRM'],
     t2: [36, 206, 'T2 · Consultoría'],
     t3: [218, 206, 'T3 · Data & AI SVG'],
-    t4: [404, 148, 'T4 · Oferta [GATE]'],
+    t4: [404, 148, 'T4 · Oferta'],
     t5: [590, 94, 'T5 · Proyectos PDF'],
     t6: [590, 206, 'T6 · Factura PDF'],
     t7: [404, 304, 'T7 · Presentación PPTX (6 slides)'],
@@ -422,77 +423,30 @@ export function drawBoardroomScreen(
   const h = ctx.canvas.height;
   ctx.fillStyle = '#0B2A5B';
   ctx.fillRect(0, 0, w, h);
-
-  const bannerColor =
-    scene.boardroomStatus === 'approval'
-      ? '#D5A13D'
-      : scene.boardroomStatus === 'meeting'
-        ? '#00B0F0'
-        : '#115293';
-  ctx.fillStyle = bannerColor;
-  ctx.fillRect(0, 0, w, 54);
+  const offerPending = scene.checkpoint?.kind === 'offer_approval';
+  ctx.fillStyle = offerPending ? '#E7B456' : '#43C6F0';
+  ctx.fillRect(0, 0, w, 7);
 
   if (logoWhite) {
-    const lw = 115;
+    const lw = 110;
     const lh = lw * (logoWhite.naturalHeight / Math.max(1, logoWhite.naturalWidth));
-    ctx.drawImage(logoWhite, 20, 14, lw, lh);
+    ctx.drawImage(logoWhite, w - lw - 30, 30, lw, lh);
   }
 
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 18px Poppins, Segoe UI, sans-serif';
-  const headerLabel =
-    scene.boardroomStatus === 'approval'
-      ? 'CHECKPOINT · APROBACIÓN HUMANA'
-      : scene.boardroomStatus === 'meeting'
-        ? 'SALA ALIERTA · REUNIÓN EN CURSO'
-        : 'SALA ALIERTA · RESUMEN NORTIA';
-  ctx.fillText(headerLabel, 154, 34);
+  ctx.fillStyle = '#ACCFE8';
+  ctx.font = '600 26px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('Sala Alierta', 30, 56);
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 22px Poppins, Segoe UI, sans-serif';
-  ctx.fillText(scene.projectTitle, 24, 96);
+  ctx.font = '700 54px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('Nortia Industrial', 30, 150, w - 60);
+  ctx.fillStyle = offerPending ? '#FFD995' : '#E3EFF7';
+  ctx.font = '500 30px Poppins, Segoe UI, sans-serif';
+  ctx.fillText(offerPending ? 'Oferta pendiente de aprobación' : eventLabel(scene.lastEvent, scene.includesTraining), 30, 209, w - 60);
 
-  const done = scene.planTasks.filter((t) => t.state === 'completed').length;
-  ctx.fillStyle = '#43C6F0';
-  ctx.font = '600 15px IBM Plex Mono, monospace';
-  ctx.fillText(
-    `TAREAS: ${done}/${scene.planTasks.length}  ·  ENTREGABLES: ${scene.artifacts.length}  ·  MODO: ${scene.mode.toUpperCase()}`,
-    24,
-    126
-  );
-
-  // Progress bar
-  ctx.fillStyle = 'rgba(255,255,255,0.16)';
-  ctx.fillRect(24, 144, w - 48, 16);
-  ctx.fillStyle = scene.boardroomStatus === 'approval' ? '#D5A13D' : '#00B0F0';
-  ctx.fillRect(24, 144, ((w - 48) * done) / Math.max(1, scene.planTasks.length), 16);
-
-  if (scene.checkpoint) {
-    ctx.fillStyle = 'rgba(213, 161, 61, 0.2)';
-    ctx.fillRect(24, 180, w - 48, 88);
-    ctx.strokeStyle = '#D5A13D';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(24, 180, w - 48, 88);
-    ctx.fillStyle = '#FFF1CC';
-    ctx.font = '700 16px Poppins, Segoe UI, sans-serif';
-    ctx.fillText(scene.checkpoint.title, 38, 212);
-    ctx.font = '500 13px IBM Plex Mono, monospace';
-    ctx.fillText(scene.checkpoint.priceBand ?? 'Run en pausa · 0 tokens consumidos', 38, 244);
-  } else {
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillRect(24, 180, w - 48, 88);
-    ctx.fillStyle = '#D7E8F5';
-    ctx.font = '500 15px Poppins, Segoe UI, sans-serif';
-    const lastTitle = scene.lastEvent?.payload?.title;
-    ctx.fillText(
-      typeof lastTitle === 'string' ? lastTitle.slice(0, 56) : 'Oficina lista para iniciar expediente',
-      38,
-      216
-    );
-    ctx.fillStyle = '#70C4BE';
-    ctx.font = '600 13px IBM Plex Mono, monospace';
-    ctx.fillText('DAT ALIERTA 2029 · SUPERVISIÓN HUMANA ACTIVA', 38, 248);
-  }
+  ctx.fillStyle = '#ACCFE8';
+  ctx.font = '500 20px Poppins, Segoe UI, sans-serif';
+  ctx.fillText(offerPending ? scene.checkpoint?.priceBand ?? '' : 'Demostración con datos ficticios', 30, h - 28, w - 60);
 }
 
 export function drawDeskMonitor(

@@ -13,6 +13,7 @@ import {
   AGENT_PROFILES,
   type AgentActivity,
 } from './officeLayout';
+import { eventLabel, resultLabel } from './officeCopy';
 
 export const MOCK_EVENTS = mockEventsRaw as OfficeEvent[];
 export const NORTIA_PLAN = planFixtureRaw as Plan;
@@ -117,15 +118,14 @@ export function reduceOfficeSceneState(
 
   const agents = {} as Record<AgentId, AgentRuntimeState>;
   for (const id of AGENT_ORDER) {
-    const profile = AGENT_PROFILES[id];
     agents[id] = {
       id,
       state: 'idle',
       activity: 'desk',
       holdingProp: 'none',
       currentTaskId: null,
-      currentTaskTitle: 'Disponible · esperando asignación',
-      bubbleText: `Puesto listo · ${profile.role}`,
+      currentTaskTitle: 'Sin tarea asignada',
+      bubbleText: 'Sin tarea asignada',
       tools: [],
       sources: [],
       artifacts: [],
@@ -148,7 +148,7 @@ export function reduceOfficeSceneState(
   const activePulses: DataPulseLink[] = [];
 
   for (const ev of slice) {
-    const title = typeof ev.payload.title === 'string' ? ev.payload.title : ev.type;
+    const title = eventLabel(ev, includesTraining);
     const aid = ev.agent_id;
 
     if (aid && agents[aid]) {
@@ -174,7 +174,7 @@ export function reduceOfficeSceneState(
         agents.director.activity = 'reception';
         agents.director.holdingProp = 'tablet';
         agents.director.currentTaskTitle = title;
-        agents.director.bubbleText = 'Recogiendo señal CRM de Nortia Industrial en Recepción…';
+        agents.director.bubbleText = 'Nueva oportunidad de Nortia';
         break;
       }
       case 'human.message': {
@@ -187,14 +187,11 @@ export function reduceOfficeSceneState(
           agents.director.bubbleText = '¿Incluimos formación en la oferta de Nortia Industrial?';
           checkpoint = {
             kind: 'scope_question',
-            title: 'Decisión de alcance · Dirección',
-            text:
-              typeof ev.payload.text === 'string'
-                ? ev.payload.text
-                : '¿Incluimos la fase opcional de formación en la oferta?',
+            title: '¿Incluimos formación?',
+            text: 'La formación para el equipo de Nortia añade 48 horas al proyecto.',
             options: [
-              { id: 'training_yes', label: 'Sí, incluir formación (+48 h)', tone: 'primary' },
-              { id: 'training_no', label: 'No, excluir formación', tone: 'secondary' },
+              { id: 'training_yes', label: 'Incluir formación', tone: 'primary' },
+              { id: 'training_no', label: 'Seguir sin formación', tone: 'secondary' },
             ],
           };
         } else {
@@ -204,8 +201,8 @@ export function reduceOfficeSceneState(
           }
           agents.director.state = 'planning';
           agents.director.bubbleText = includesTraining
-            ? 'Respuesta recibida: incluimos fase de formación en el DAG.'
-            : 'Respuesta recibida: oferta ajustada sin formación.';
+            ? 'Incluimos formación en la oferta.'
+            : 'Seguimos sin formación.';
         }
         break;
       }
@@ -217,13 +214,11 @@ export function reduceOfficeSceneState(
           agents.director.state = 'waiting';
           agents.director.activity = 'boardroom';
           agents.director.holdingProp = 'tablet';
-          agents.director.bubbleText = 'En Sala Alierta esperando tu aprobación de la oferta.';
+          agents.director.bubbleText = 'Pendiente de tu decisión';
           agents.offers.state = 'waiting';
           agents.offers.activity = 'boardroom';
           agents.offers.holdingProp = 'binder';
-          agents.offers.bubbleText = includesTraining
-            ? 'Borrador listo (42.000 € – 58.000 €). Sin envío hasta aprobar.'
-            : 'Borrador listo (36.000 € – 50.000 €). Sin envío hasta aprobar.';
+          agents.offers.bubbleText = 'Borrador listo para revisar';
         } else {
           agents.director.state = 'waiting';
           agents.director.activity = 'whiteboard';
@@ -248,7 +243,7 @@ export function reduceOfficeSceneState(
         agents.director.activity = 'whiteboard';
         agents.director.holdingProp = 'tablet';
         agents.director.currentTaskTitle = title;
-        agents.director.bubbleText = 'Plan DAG validado (7 tareas) en pizarra · delegando equipo…';
+        agents.director.bubbleText = 'Repartiendo el trabajo';
         break;
       }
       case 'task.assigned': {
@@ -257,7 +252,7 @@ export function reduceOfficeSceneState(
           agents[aid].state = 'collaborating';
           agents[aid].currentTaskId = ev.task_id;
           agents[aid].currentTaskTitle = title;
-          agents[aid].bubbleText = `Asignada: ${title}`;
+          agents[aid].bubbleText = title;
           agents[aid].activity = 'desk';
         }
         break;
@@ -276,7 +271,7 @@ export function reduceOfficeSceneState(
             agents.director.activity = 'desk';
             agents.director.holdingProp = 'none';
             agents.director.state = 'working';
-            agents.director.bubbleText = 'Supervisando ejecución paralela de especialistas…';
+            agents.director.bubbleText = 'Coordinando al equipo';
           }
         }
         break;
@@ -302,11 +297,11 @@ export function reduceOfficeSceneState(
           if (!agents[aid].artifacts.includes(artName)) {
             agents[aid].artifacts.push(artName);
           }
-          agents[aid].bubbleText = `Entregable generado: ${artName}`;
+          agents[aid].bubbleText = resultLabel(aid);
           if (aid === 'offers') {
             agents[aid].activity = 'printer';
             agents[aid].holdingProp = 'binder';
-            agents[aid].bubbleText = 'Recogiendo dossier BORRADOR en impresora para revisión…';
+            agents[aid].bubbleText = 'Recogiendo el borrador de la oferta';
           } else if (aid === 'architect') {
             agents[aid].activity = 'arch_board';
             agents[aid].holdingProp = 'tablet';
@@ -325,12 +320,12 @@ export function reduceOfficeSceneState(
           : '36.000 € – 50.000 € (380 h · sin formación)';
         checkpoint = {
           kind: 'offer_approval',
-          title: 'Aprobación humana requerida · Oferta Nortia',
-          text: 'Revisa el borrador oferta-nortia-borrador.docx antes de desbloquear Proyectos, Facturación y Presentación.',
+          title: '¿Apruebas la oferta?',
+          text: 'Si la apruebas, el equipo prepara el plan de proyecto y el borrador de factura.',
           priceBand: band,
           options: [
-            { id: 'approve', label: 'Aprobar oferta y reanudar', tone: 'primary' },
-            { id: 'correct', label: 'Pedir ajuste en oferta', tone: 'secondary' },
+            { id: 'approve', label: 'Aprobar oferta', tone: 'primary' },
+            { id: 'correct', label: 'Pedir cambios', tone: 'secondary' },
           ],
         };
         agents.director.state = 'waiting';
@@ -347,7 +342,7 @@ export function reduceOfficeSceneState(
         agents.offers.state = 'completed';
         agents.offers.activity = 'desk';
         agents.offers.holdingProp = 'none';
-        agents.offers.bubbleText = 'Oferta aprobada · liberando fase de Operación y Diseño.';
+        agents.offers.bubbleText = 'Oferta aprobada';
         break;
       }
       case 'task.completed': {
@@ -379,7 +374,7 @@ export function reduceOfficeSceneState(
         agents.director.activity = 'whiteboard';
         agents.director.holdingProp = 'none';
         agents.director.currentTaskTitle = title;
-        agents.director.bubbleText = 'Ciclo Nortia completado · 5 entregables trazables listos.';
+        agents.director.bubbleText = 'Proyecto completado';
         break;
       }
       default:
@@ -396,7 +391,7 @@ export function reduceOfficeSceneState(
         from: 'reception',
         to: 'director',
         color: '#00B0F0',
-        label: 'Señal CRM',
+        label: 'Nueva oportunidad',
       });
     } else if (
       lastEvent.type === 'task.assigned' ||
@@ -409,7 +404,7 @@ export function reduceOfficeSceneState(
             from: 'director',
             to: id,
             color: '#00B0F0',
-            label: 'Delegación DAG',
+            label: 'Encargo asignado',
           });
         }
       }
@@ -419,13 +414,13 @@ export function reduceOfficeSceneState(
           from: 'consultant',
           to: 'architect',
           color: '#70C4BE',
-          label: 'briefing.json',
+          label: 'Requisitos del proyecto',
         });
       }
       if (agents.offers.state === 'working') {
         activePulses.push(
-          { id: 'pulse-crm-off', from: 'crm', to: 'offers', color: '#43C6F0', label: 'account_brief' },
-          { id: 'pulse-arch-off', from: 'architect', to: 'offers', color: '#43C6F0', label: 'architecture.svg' }
+          { id: 'pulse-crm-off', from: 'crm', to: 'offers', color: '#43C6F0', label: 'Resumen de la cuenta' },
+          { id: 'pulse-arch-off', from: 'architect', to: 'offers', color: '#43C6F0', label: 'Diagrama de solución' }
         );
       }
       if (agents.designer.state === 'working') {
@@ -440,7 +435,7 @@ export function reduceOfficeSceneState(
         from: 'offers',
         to: 'director',
         color: '#D5A13D',
-        label: 'Aprobación BORRADOR',
+        label: 'Oferta pendiente',
       });
     }
   }

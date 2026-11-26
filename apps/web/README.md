@@ -2,7 +2,7 @@
 
 Prototipo visual del hackathon: sede **DAT Alierta 2029** de **28 × 20 m**, 8 especialistas digitales, campus exterior y replay de **34 eventos**. Renderizado con **React Three Fiber + Three.js + Drei** en cámara ortográfica.
 
-> Estado: **prototipo visual con replay mock**. No hay backend real, SSE ni LLM en vivo conectados. La UI lo declara en cabecera (`MOCK · REPLAY 34 EVENTOS`) y no simula éxitos en modo live. No es un producto oficial de Integra.
+> Estado: **prototipo visual con datos ficticios**. La cabecera identifica la demo. No hay backend, SSE ni LLM en vivo conectados. No es un producto oficial de Integra.
 
 ## Arrancar
 
@@ -21,13 +21,12 @@ npm run typecheck  # solo TypeScript
 
 ## Qué se puede probar
 
-- **12 cámaras**: Oficina, Campus, Recepción, Dirección, Sala Alierta, Formación, Comercial, Soluciones, Diseño, Operación, Café y Terraza.
-- **3 iluminaciones**: Día, Atardecer y Guardia IA (noche), con bloom selectivo y luces de acento.
-- **Replay de 34 eventos**: play/pausa, salto por evento y checkpoint humano con aprobación/rechazo.
-- **Vida simulada**: agentes libres que van a café, lounge, terraza, cabina, grada, academia o PC 1986; se cancela en cuanto reciben una tarea real.
-- **Globos smart**: badges compactos en vistas amplias; el globo completo aparece al hacer hover, click, seguir a un agente o activarse un checkpoint.
-- **Inspector**: estado, actividad, herramientas, fuentes, artefactos y eventos por agente.
-- **Reduced motion**: desactiva desplazamientos y simulador ambiental; los estados siguen visibles.
+- **Iniciar demo**: abre el caso Nortia desde el principio. La cámara y el foco acompañan las dos decisiones: incluir formación y aprobar la oferta. Al confirmar, vuelve la vista general. Se puede pedir una revisión y volver a la aprobación.
+- **Oficina y Campus**: accesos sobre la escena. `Vista` reúne las 12 cámaras, luces de día/atardecer/noche, etiquetas y movimiento. Los FPS y las acciones de ensayo están en `Controles de prueba`.
+- **Actividad**: acceso directo a las dos decisiones; `Registro de eventos` abre la secuencia completa y permite moverse por los 34 eventos.
+- **Proyecto y Agente**: seguimiento del trabajo y resultados del ejemplo. Los identificadores de herramientas y fuentes están en `Detalles técnicos`.
+- **Etiquetas**: las vistas generales reservan avisos para agentes activos. Se puede seleccionar un agente para ver su actividad. Durante las decisiones destacan Elena y los agentes implicados.
+- **Reducir movimiento**: desactiva desplazamientos y simulador ambiental; los estados siguen visibles.
 
 ## Mapa de la sede
 
@@ -52,7 +51,7 @@ Elementos repetidos con `InstancedMesh`: **180 celosías cerámicas** y **112 m�
 
 | Archivo | Responsabilidad |
 |---|---|
-| `src/App.tsx` | HUD, timeline de 34 eventos, inspector, checkpoints, presets y accesibilidad |
+| `src/App.tsx` | Controles de la demo, actividad, inspector, decisiones y accesibilidad |
 | `src/scene/OfficeCanvas.tsx` | Canvas, cámara ortográfica, luces, sombras, bloom, métricas FPS y rig de cámara |
 | `src/scene/OfficeArchitecture.tsx` | Sede 28×20 m, atrio, salas, mobiliario, terraza, pérgola, celosías y Server Lab |
 | `src/scene/CampusExterior.tsx` | Pabellones, monolito, aparcamiento EV, agua, bici, tráfico, peatones y horizonte |
@@ -62,6 +61,7 @@ Elementos repetidos con `InstancedMesh`: **180 celosías cerámicas** y **112 m�
 | `src/scene/screenTextures.ts` | Texturas canvas de pantallas, señalética, logos y reloj |
 | `src/scene/KenneyModel.tsx` | Carga y caché de modelos CC0 de Kenney |
 | `src/state/officeReducer.ts` | Estado de oficina derivado de eventos, checkpoints y actividad |
+| `src/state/officeCopy.ts` | Textos de actividad, tareas y resultados de la demo |
 | `src/state/officeLayout.ts` | Perfiles de agentes, rutas, waypoints, zonas y presets de cámara |
 | `src/state/useOfficeLifeSim.ts` | Simulador ambiental autónomo |
 
@@ -92,6 +92,8 @@ Elementos repetidos con `InstancedMesh`: **180 celosías cerámicas** y **112 m�
 ## Assets y licencias
 
 Los modelos de mobiliario, naturaleza, coches y ciudad son **Kenney CC0**; el HDRI es **Poly Haven CC0**; el logo es el SVG oficial de `08_RECURSOS/brand/`. El detalle de origen, versión y modificaciones está en `08_RECURSOS/ASSETS.md`. No hay assets de pago ni fan art.
+
+Los personajes son ficticios y de geometría propia. La [presentación pública del DAT Alierta](https://www.integratecnologia.es/noticias/integra-primera-empresa-privada-en-incorporarse-al-dat-alierta) orienta la luz natural y los espacios de trabajo y formación. [My Room in 3D](https://github.com/brunosimon/my-room-in-3d) se consultó como referencia de contraste entre materiales y luz ambiente; no se importaron sus archivos.
 
 ## Limitaciones conocidas
 

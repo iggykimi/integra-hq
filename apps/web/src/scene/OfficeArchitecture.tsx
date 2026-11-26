@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Html, useTexture } from '@react-three/drei';
+import { Html, RoundedBox, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -39,6 +39,7 @@ export type LandmarkId =
 interface OfficeArchitectureProps {
   scene: OfficeSceneState;
   mood: LightingMood;
+  focusBoardroom: boolean;
   coffeeActiveOverride?: boolean;
   reducedMotion: boolean;
   onInteractLandmark: (landmark: LandmarkId) => void;
@@ -397,6 +398,7 @@ function CoffeeSteamCluster({ active, reducedMotion }: { active: boolean; reduce
 export function OfficeArchitecture({
   scene,
   mood,
+  focusBoardroom,
   coffeeActiveOverride = false,
   reducedMotion,
   onInteractLandmark,
@@ -609,7 +611,7 @@ export function OfficeArchitecture({
       {/* Sala Alierta acoustic slate carpet */}
       <mesh position={[-3.7, 0.006, -5.8]} receiveShadow>
         <boxGeometry args={[6.7, 0.012, 7.2]} />
-        <meshStandardMaterial color="#D5DFE6" roughness={0.92} />
+        <meshStandardMaterial color="#ACAFA5" roughness={1} />
       </mesh>
       {/* Academia Integra subtle cool carpet */}
       <mesh position={[3.6, 0.006, -5.8]} receiveShadow>
@@ -972,21 +974,23 @@ export function OfficeArchitecture({
 
       {/* ==================== SALA ALIERTA · GRAND 8-SEAT GLASS BOARDROOM (X: -7.2..-0.2) ==================== */}
       <group>
-        {[-7.2, -0.2].map((gx) => (
+        {(focusBoardroom ? [-7.2] : [-7.2, -0.2]).map((gx) => (
           <group key={gx} position={[gx, 0, -5.9]}>
-            <mesh position={[0, 1.56, 0]}>
-              <boxGeometry args={[0.06, 3.08, 7.8]} />
+            <mesh position={[0, 1.56, 0]} rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[7.8, 3.08]} />
               <meshPhysicalMaterial
                 color="#B8D4DD"
                 transparent
-                opacity={0.25}
+                opacity={0.2}
+                depthWrite={false}
+                side={THREE.DoubleSide}
                 roughness={0.12}
                 metalness={0.05}
               />
             </mesh>
             <mesh position={[0, 1.28, 0]}>
               <boxGeometry args={[0.068, 0.34, 7.6]} />
-              <meshStandardMaterial color="#E6F2F6" transparent opacity={0.4} roughness={0.6} />
+              <meshStandardMaterial color="#E6F2F6" transparent depthWrite={false} opacity={0.32} roughness={0.6} />
             </mesh>
             <mesh position={[0, 3.12, 0]}>
               <boxGeometry args={[0.09, 0.08, 7.9]} />
@@ -996,25 +1000,25 @@ export function OfficeArchitecture({
         ))}
 
         {/* Front glass panels flanking central doorway at X = -3.7 */}
-        {[-5.95, -1.45].map((fx) => (
+        {!focusBoardroom && [-5.95, -1.45].map((fx) => (
           <group key={fx} position={[fx, 0, -2.0]}>
             <mesh position={[0, 1.56, 0]}>
-              <boxGeometry args={[2.42, 3.08, 0.06]} />
-              <meshPhysicalMaterial color="#B8D4DD" transparent opacity={0.24} roughness={0.12} />
+              <planeGeometry args={[2.42, 3.08]} />
+              <meshPhysicalMaterial color="#B8D4DD" transparent opacity={0.18} depthWrite={false} side={THREE.DoubleSide} roughness={0.12} />
             </mesh>
             <mesh position={[0, 1.28, 0]}>
               <boxGeometry args={[2.36, 0.28, 0.068]} />
-              <meshStandardMaterial color="#E6F2F6" transparent opacity={0.4} roughness={0.6} />
+              <meshStandardMaterial color="#E6F2F6" transparent depthWrite={false} opacity={0.32} roughness={0.6} />
             </mesh>
           </group>
         ))}
 
         {/* Header transom + glowing Sala Alierta Status Sign */}
-        <mesh position={[-3.7, 3.12, -2.0]}>
+        <mesh position={[-3.7, 3.12, -2.0]} visible={!focusBoardroom}>
           <boxGeometry args={[7.05, 0.1, 0.1]} />
           <meshStandardMaterial color="#344452" roughness={0.4} metalness={0.45} />
         </mesh>
-        <group position={[-3.7, 2.84, -1.94]}>
+        {!focusBoardroom && <group position={[-3.7, 2.84, -1.94]}>
           <mesh castShadow>
             <boxGeometry args={[2.1, 0.34, 0.08]} />
             <meshStandardMaterial color="#0B2A5B" roughness={0.4} />
@@ -1037,9 +1041,9 @@ export function OfficeArchitecture({
                   : 'SALA ALIERTA'}
             </div>
           </Html>
-        </group>
+        </group>}
 
-        {/* Grand Frosted Glass Conference Table (clickable!) */}
+        {/* Oak meeting table with rounded corners and a recessed cable tray. */}
         <group
           position={[-3.7, 0, -5.8]}
           onClick={(e) => {
@@ -1052,26 +1056,23 @@ export function OfficeArchitecture({
           }}
           onPointerOut={() => setPointer(null)}
         >
-          <KenneyModel
-            name="tableGlass"
-            position={[0, 0, 0]}
-            scale={[3.55, 2.25, 3.1]}
-            palette={{
-              metal: { color: '#96AAB8', roughness: 0.32, metalness: 0.55 },
-              glass: { color: '#D8EEF5', transparent: true, opacity: 0.65, roughness: 0.1 },
-            }}
-          />
-          <mesh position={[0, 0.76, 0]} castShadow>
-            <cylinderGeometry args={[0.16, 0.18, 0.045, 18]} />
-            <meshStandardMaterial color="#1E2C3A" roughness={0.35} metalness={0.4} />
-          </mesh>
-          <mesh position={[0, 0.785, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.08, 0.11, 18]} />
-            <meshBasicMaterial color={boardroomBadgeColor} />
-          </mesh>
+          <RoundedBox args={[3.08, 0.09, 1.66]} radius={0.038} position={[0, 0.72, 0]} castShadow receiveShadow>
+            <meshStandardMaterial color="#C9A57B" roughness={0.58} />
+          </RoundedBox>
+          {[-0.94, 0.94].map((x) => (
+            <RoundedBox key={x} args={[0.13, 0.68, 1.06]} radius={0.035} position={[x, 0.34, 0]} castShadow>
+              <meshStandardMaterial color="#3B474D" roughness={0.55} metalness={0.32} />
+            </RoundedBox>
+          ))}
+          <RoundedBox args={[0.64, 0.018, 0.18]} radius={0.008} position={[0, 0.768, 0]}>
+            <meshStandardMaterial color="#3B474D" roughness={0.55} />
+          </RoundedBox>
+          <RoundedBox args={[0.30, 0.023, 0.225]} radius={0.009} position={[-1.12, 0.774, -0.19]} rotation={[0, -0.16, 0]} castShadow>
+            <meshStandardMaterial color="#F0E9DB" roughness={0.9} />
+          </RoundedBox>
           {hoveredLandmark === 'boardroom' && (
             <Html position={[0, 1.38, 0]} center zIndexRange={[10, 0]}>
-              <div className="landmark-tooltip">Click: convocar / cerrar reunión en Sala Alierta</div>
+              <div className="landmark-tooltip">{scene.boardroomStatus === 'meeting' ? 'Cerrar reunión' : 'Sala Alierta'}</div>
             </Html>
           )}
         </group>
@@ -1085,8 +1086,8 @@ export function OfficeArchitecture({
             rotation={[0, seat.yaw + Math.PI, 0]}
             scale={[2.25, 2.0, 2.25]}
             palette={{
-              carpetBlue: { color: idx === 0 ? '#0B2A5B' : '#244A6E', roughness: 0.82 },
-              metal: { color: '#BFCBD4', roughness: 0.35, metalness: 0.5 },
+              carpetBlue: { color: idx === 0 ? '#283E64' : '#506671', roughness: 0.94 },
+              metal: { color: '#414E57', roughness: 0.48, metalness: 0.32 },
             }}
           />
         ))}
@@ -1166,7 +1167,7 @@ export function OfficeArchitecture({
           <Html position={[0, 0.02, 0.08]} center zIndexRange={[6, 0]}>
             <div className="boardroom-sign" style={{ borderColor: academyBadgeColor }}>
               <span className="status-dot" style={{ background: academyBadgeColor }} />
-              {scene.includesTraining ? 'ACADEMIA · FORMACIÓN ON' : 'ACADEMIA INTEGRA'}
+              ACADEMIA INTEGRA
             </div>
           </Html>
         </group>

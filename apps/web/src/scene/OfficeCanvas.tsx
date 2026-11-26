@@ -4,6 +4,7 @@ import {
   Environment,
   OrbitControls,
   OrthographicCamera,
+  useProgress,
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer } from '@react-three/postprocessing';
@@ -70,11 +71,11 @@ const MOOD_LIGHTING: Record<
     bg: '#E6ECE9',
     hemiSky: '#FFFDF8',
     hemiGround: '#8FA1AD',
-    hemiIntensity: 0.92,
-    sunPos: [22, 26, 16],
-    sunColor: '#FFF9ED',
-    sunIntensity: 1.55,
-    envIntensity: 0.55,
+    hemiIntensity: 0.7,
+    sunPos: [18, 20, 12],
+    sunColor: '#FFF5E5',
+    sunIntensity: 1.45,
+    envIntensity: 0.48,
   },
   golden: {
     bg: '#E8DDD2',
@@ -143,7 +144,11 @@ function CameraRig({
   reducedMotion: boolean;
 }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const { camera } = useThree();
+  const { camera, size } = useThree();
+  // The whole floor needs more room than a close-up, especially beside the inspector.
+  const wideScale = Math.min(1, size.width / 1440, size.height / 920);
+  const detailScale = Math.min(1, size.width / 1200, size.height / 900);
+  const zoomScale = presetId === 'overview' || presetId === 'campus' ? wideScale : detailScale;
   const animatingRef = useRef(false);
   const goalPos = useRef(new THREE.Vector3(31, 25, 31));
   const goalTarget = useRef(new THREE.Vector3(0.6, 0.2, 0.1));
@@ -153,9 +158,9 @@ function CameraRig({
     const preset = CAMERA_PRESETS.find((p) => p.id === presetId) ?? CAMERA_PRESETS[0];
     goalPos.current.set(...preset.position);
     goalTarget.current.set(...preset.target);
-    goalZoom.current = preset.zoom;
+    goalZoom.current = preset.zoom * zoomScale;
     animatingRef.current = true;
-  }, [presetId, trigger]);
+  }, [presetId, trigger, zoomScale]);
 
   useFrame((_state, delta) => {
     const controls = controlsRef.current;
@@ -167,7 +172,7 @@ function CameraRig({
       const pos = agentPositionsRef.current[selectedAgent] ?? AGENT_PROFILES[selectedAgent].seatPos;
       goalTarget.current.set(pos.x, 0.9, pos.z);
       goalPos.current.set(pos.x + 11, 9.6, pos.z + 11);
-      goalZoom.current = 104;
+      goalZoom.current = 104 * detailScale;
       animatingRef.current = true;
     }
 
@@ -194,7 +199,7 @@ function CameraRig({
       makeDefault
       enableDamping={!reducedMotion}
       dampingFactor={0.08}
-      minZoom={18}
+      minZoom={18 * wideScale}
       maxZoom={165}
       maxPolarAngle={Math.PI / 2.12}
       minPolarAngle={Math.PI / 7}
@@ -221,6 +226,7 @@ export function OfficeCanvas({
   onMetrics,
 }: OfficeCanvasProps) {
   const light = MOOD_LIGHTING[mood];
+  const loading = useProgress((state) => state.active);
   const agentPositionsRef = useRef<Partial<Record<AgentId, Vec2>>>({});
   const [pulsePositions, setPulsePositions] = useState<Partial<Record<AgentId, Vec2>>>({});
 
@@ -241,7 +247,7 @@ export function OfficeCanvas({
   return (
     <div
       className="viewport-canvas-wrap"
-      aria-label="Escena 3D interactiva de Integra HQ DAT Alierta 2029 con sede 28x20m y 8 agentes"
+      aria-label="Maqueta 3D de la oficina de Integra en el DAT Alierta"
     >
       <Canvas
         shadows
@@ -283,7 +289,8 @@ export function OfficeCanvas({
           shadow-camera-bottom={-30}
           shadow-camera-near={1}
           shadow-camera-far={95}
-          shadow-bias={-0.0004}
+          shadow-bias={-0.00025}
+          shadow-normalBias={0.018}
         />
 
         {/* Subtle accent interior lights in Evening/Night mode (capped at 3 for GPU smoothness) */}
@@ -301,6 +308,7 @@ export function OfficeCanvas({
           <OfficeArchitecture
             scene={scene}
             mood={mood}
+            focusBoardroom={cameraPreset === 'boardroom' && !followSelected}
             coffeeActiveOverride={ambientCoffeeActive}
             reducedMotion={reducedMotion}
             onInteractLandmark={onInteractLandmark}
@@ -336,18 +344,17 @@ export function OfficeCanvas({
             enabled={showPulses}
             reducedMotion={reducedMotion}
           />
-        </Suspense>
 
-        {/* Baked 1-frame contact shadow for crisp grounding at 60fps without rebake stalls */}
-        <ContactShadows
-          frames={1}
-          resolution={512}
-          position={[0, 0.015, 0]}
-          opacity={0.28}
-          scale={36}
-          blur={1.7}
-          far={4.5}
-        />
+          <ContactShadows
+            frames={1}
+            resolution={512}
+            position={[0, 0.028, 0]}
+            opacity={0.32}
+            scale={36}
+            blur={2.1}
+            far={3.5}
+          />
+        </Suspense>
 
         <CameraRig
           presetId={cameraPreset}
@@ -369,6 +376,7 @@ export function OfficeCanvas({
 
         <MetricsProbe onMetrics={onMetrics} />
       </Canvas>
+      {loading && <span className="viewport-loading" role="status">Cargando la oficina…</span>}
     </div>
   );
 }

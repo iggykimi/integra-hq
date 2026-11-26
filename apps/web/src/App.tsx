@@ -2,14 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowsOutCardinal,
   BuildingOffice,
-  ChatCircleDots,
   CheckCircle,
   Coffee,
-  Cpu,
   EnvelopeSimple,
   Eye,
   FileText,
-  Lightning,
   ListChecks,
   MoonStars,
   Pause,
@@ -17,11 +14,9 @@ import {
   SkipBack,
   SkipForward,
   SlidersHorizontal,
-  Sparkle,
   Sun,
   SunHorizon,
   UsersThree,
-  WarningCircle,
 } from '@phosphor-icons/react';
 import type { AgentId, AgentState } from '@contracts/types';
 import type { LandmarkId } from './scene/OfficeArchitecture';
@@ -46,20 +41,24 @@ import {
   type SceneOverrides,
 } from './state/officeReducer';
 import { useOfficeLifeSim } from './state/useOfficeLifeSim';
+import { eventLabel, PROJECT_LABEL, resultLabel, taskLabel, TASK_LABEL } from './state/officeCopy';
 
 type SideTabId = 'project' | 'inspector' | 'events' | 'scene';
 
 const SIDE_TABS: Array<{ id: SideTabId; label: string }> = [
   { id: 'project', label: 'Proyecto' },
-  { id: 'inspector', label: 'Inspector' },
-  { id: 'events', label: 'Eventos' },
-  { id: 'scene', label: 'Escena' },
+  { id: 'inspector', label: 'Agente' },
+  { id: 'events', label: 'Actividad' },
+  { id: 'scene', label: 'Vista' },
 ];
 
+const SCOPE_PAUSE = MOCK_EVENTS.findIndex((event) => event.payload.reason === 'waiting_human_scope_decision') + 1;
+const OFFER_PAUSE = MOCK_EVENTS.findIndex((event) => event.payload.reason === 'waiting_offer_approval') + 1;
+
 export function App() {
-  const [eventCursor, setEventCursor] = useState<number>(15);
+  const [eventCursor, setEventCursor] = useState(0);
   const [playing, setPlaying] = useState<boolean>(false);
-  const [selectedAgent, setSelectedAgent] = useState<AgentId | null>('director');
+  const [selectedAgent, setSelectedAgent] = useState<AgentId | null>(null);
   const [activeTab, setActiveTab] = useState<SideTabId>('project');
   const [mood, setMood] = useState<LightingMood>('day');
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('overview');
@@ -78,6 +77,9 @@ export function App() {
   );
 
   const heritageDialogRef = useRef<HTMLDialogElement>(null);
+  const checkpointHeadingRef = useRef<HTMLHeadingElement>(null);
+  const playButtonRef = useRef<HTMLButtonElement>(null);
+  const restorePlayFocus = useRef(false);
   const tabRefs = useRef<Partial<Record<SideTabId, HTMLButtonElement | null>>>({});
 
   const scene = useMemo(
@@ -85,28 +87,20 @@ export function App() {
     [eventCursor, overrides]
   );
 
-  const ambientMap = useOfficeLifeSim(ambientLife, reducedMotion, mood, scene, ambientTrigger);
+  const checkpointKind = scene.checkpoint?.kind;
+  const ambientMap = useOfficeLifeSim(ambientLife && !checkpointKind, reducedMotion, mood, scene, ambientTrigger);
 
-  // Playback engine that naturally pauses at human checkpoints (events #3 and #21)
   useEffect(() => {
     if (!playing) return;
-    const id = window.setInterval(() => {
-      setEventCursor((prev) => {
-        if (prev >= MOCK_EVENTS.length) {
-          setPlaying(false);
-          return prev;
-        }
-        const next = prev + 1;
-        const ev = MOCK_EVENTS[next - 1];
-        if (ev?.type === 'run.paused') {
-          setPlaying(false);
-          setLiveAnnouncement(`Ejecución en pausa: ${String(ev.payload.title ?? 'esperando acción humana')}`);
-        }
-        return next;
-      });
+    const id = window.setTimeout(() => {
+      const next = eventCursor + 1;
+      setEventCursor(next);
+      if (next === SCOPE_PAUSE || next === OFFER_PAUSE || next === MOCK_EVENTS.length) {
+        setPlaying(false);
+      }
     }, 1150);
-    return () => window.clearInterval(id);
-  }, [playing]);
+    return () => window.clearTimeout(id);
+  }, [eventCursor, playing]);
 
   const jumpCamera = useCallback((preset: CameraPresetId) => {
     setFollowSelected(false);
@@ -114,11 +108,21 @@ export function App() {
     setCameraTrigger((n) => n + 1);
   }, []);
 
+  useEffect(() => {
+    if (checkpointKind) {
+      jumpCamera(checkpointKind === 'scope_question' ? 'director' : 'boardroom');
+      checkpointHeadingRef.current?.focus();
+    } else if (restorePlayFocus.current) {
+      restorePlayFocus.current = false;
+      playButtonRef.current?.focus({ preventScroll: true });
+    }
+  }, [checkpointKind, jumpCamera]);
+
   const handleSelectAgent = useCallback((id: AgentId | null) => {
     setSelectedAgent(id);
     if (id) {
       setActiveTab('inspector');
-      setLiveAnnouncement(`Agente seleccionado: ${AGENT_PROFILES[id].displayName}`);
+      setLiveAnnouncement(AGENT_PROFILES[id].displayName);
     } else {
       setFollowSelected(false);
     }
@@ -126,15 +130,17 @@ export function App() {
 
   const handleCheckpointAction = useCallback(
     (optionId: string) => {
+      restorePlayFocus.current = true;
       if (optionId === 'training_yes' || optionId === 'training_no') {
         const include = optionId === 'training_yes';
         setOverrides((prev) => ({ ...prev, includesTraining: include }));
         setEventCursor(6); // Advance directly past human scope answer to plan.created
         setPlaying(true);
+        jumpCamera('overview');
         setLiveAnnouncement(
           include
-            ? 'Alcance actualizado con formación. Reanudando plan DAG.'
-            : 'Alcance actualizado sin formación. Reanudando plan DAG.'
+            ? 'La oferta incluirá formación.'
+            : 'La oferta seguirá sin formación.'
         );
         return;
       }
@@ -142,16 +148,17 @@ export function App() {
         setOverrides((prev) => ({ ...prev, meetingActive: false }));
         setEventCursor(24); // approval.resolved + run.resumed + offers task.completed
         setPlaying(true);
-        setLiveAnnouncement('Oferta aprobada. Reanudando Proyectos, Facturación y Diseño.');
+        jumpCamera('overview');
+        setLiveAnnouncement('Oferta aprobada. El equipo prepara el proyecto y la factura.');
         return;
       }
       if (optionId === 'correct') {
         setEventCursor(18); // Return offers to working for controlled adjustment
         setPlaying(false);
-        setLiveAnnouncement('Solicitud de ajuste registrada. Ofertas vuelve a revisión.');
+        setLiveAnnouncement('El equipo de Ofertas revisará el borrador.');
       }
     },
-    []
+    [jumpCamera]
   );
 
   const handleInteractLandmark = useCallback(
@@ -169,7 +176,7 @@ export function App() {
           }));
           setEventCursor(1);
           jumpCamera('reception');
-          setLiveAnnouncement('Nueva señal CRM Nortia recibida en Recepción.');
+          setLiveAnnouncement('Nueva oportunidad de Nortia en recepción.');
           break;
         case 'whiteboard':
           jumpCamera('director');
@@ -183,11 +190,11 @@ export function App() {
                 activity: 'whiteboard',
                 state: 'planning',
                 holdingProp: 'tablet',
-                bubbleText: 'Revisando dependencias del plan DAG en pizarra…',
+                bubbleText: 'Revisando el plan de trabajo',
               },
             },
           }));
-          setLiveAnnouncement('Cámara enfocada en Dirección y pizarra DAG.');
+          setLiveAnnouncement('Vista de Dirección.');
           break;
         case 'boardroom':
           setOverrides((prev) => {
@@ -249,7 +256,7 @@ export function App() {
                 activity: 'terrace',
                 state: 'idle',
                 holdingProp: 'coffee',
-                bubbleText: 'Respirando aire fresco bajo la pérgola cerámica mirando al DAT Alierta…',
+                bubbleText: 'Un descanso en la terraza',
               },
             },
           }));
@@ -289,7 +296,7 @@ export function App() {
                 activity: 'auditorium',
                 state: 'collaborating',
                 holdingProp: 'tablet',
-                bubbleText: 'Ensayando la demo ejecutiva en la grada de roble IntegraTalks…',
+                bubbleText: 'Ensayando la presentación',
               },
             },
           }));
@@ -307,7 +314,7 @@ export function App() {
                 activity: 'printer',
                 state: 'waiting',
                 holdingProp: 'binder',
-                bubbleText: 'Recogiendo oferta-nortia-borrador.docx en la estación de impresión…',
+                bubbleText: 'Recogiendo el borrador de la oferta',
               },
             },
           }));
@@ -341,7 +348,7 @@ export function App() {
                 activity: 'slides_tv',
                 state: 'working',
                 holdingProp: 'tablet',
-                bubbleText: 'Revisando las 6 diapositivas del comité Nortia en pantalla 16:9…',
+                bubbleText: 'Revisando la presentación de Nortia',
               },
             },
           }));
@@ -382,8 +389,13 @@ export function App() {
       ...INITIAL_OVERRIDES,
       includesTraining: prev.includesTraining,
     }));
-    setLiveAnnouncement('Overrides manuales limpiados; escena sincronizada con eventos.');
   }, []);
+
+  const seek = (cursor: number) => {
+    setPlaying(false);
+    clearOverrides();
+    setEventCursor(cursor);
+  };
 
   // Keyboard navigation fallback for tablist (arrow keys + Home/End)
   const handleTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -421,14 +433,8 @@ export function App() {
   const inspectedMeta = STATE_META[inspectedRuntime.state];
 
   const completedTasks = scene.planTasks.filter((t) => t.state === 'completed').length;
-  const activeAgentsCount = AGENT_ORDER.filter(
-    (id) =>
-      scene.agents[id].state === 'working' ||
-      scene.agents[id].state === 'planning' ||
-      scene.agents[id].state === 'collaborating'
-  ).length;
-
-  const isDarkHud = mood === 'night';
+  const activity = eventLabel(scene.lastEvent, scene.includesTraining);
+  const finished = eventCursor === MOCK_EVENTS.length;
 
   return (
     <div className="app-shell">
@@ -451,25 +457,14 @@ export function App() {
           />
           <span className="brand-sep" aria-hidden="true" />
           <div>
-            <h1 className="brand-heading">Integra HQ · DAT Alierta 2029</h1>
-            <span className="brand-subtitle">
-              {scene.projectTitle} · Sede 28×20 m · 8 especialistas digitales
-            </span>
+            <h1 className="brand-heading">Integra HQ</h1>
+            <span className="brand-subtitle">DAT Alierta, Zaragoza</span>
           </div>
         </div>
 
         <div className="topbar-meta">
-          <span className="badge-pill cyan">
-            <Cpu size={14} weight="regular" aria-hidden="true" />
-            MOCK · REPLAY 34 EVENTOS
-          </span>
-          {scene.status === 'paused' && (
-            <span className="badge-pill amber">
-              <WarningCircle size={14} weight="regular" aria-hidden="true" />
-              EN PAUSA · CHECKPOINT
-            </span>
-          )}
-          <span className="badge-pill">PROTOTIPO HACKATHON · NO PRODUCTO OFICIAL</span>
+          <span className="badge-pill">Demo con datos ficticios</span>
+          <small>Prototipo no oficial</small>
         </div>
       </header>
 
@@ -486,146 +481,30 @@ export function App() {
               followSelected={followSelected}
               selectedAgent={selectedAgent}
               bubbleMode={bubbleMode}
-              showPulses={showPulses}
+              showPulses={showPulses && !checkpointKind}
               reducedMotion={reducedMotion}
               onSelectAgent={handleSelectAgent}
               onInteractLandmark={handleInteractLandmark}
               onMetrics={setMetrics}
             />
 
-            {/* Top Floating Scene Controls (Lighting, Quick Choreography, Toggles) */}
-            <div className="hud-top-bar">
-              <div className="hud-group">
-                <div
-                  className={`hud-strip${isDarkHud ? ' dark-mood' : ''}`}
-                  role="group"
-                  aria-label="Iluminación ambiental"
-                >
-                  <button
-                    type="button"
-                    className={`hud-btn${mood === 'day' ? ' active' : ''}`}
-                    onClick={() => setMood('day')}
-                  >
-                    <Sun size={15} weight="regular" aria-hidden="true" />
-                    Día
-                  </button>
-                  <button
-                    type="button"
-                    className={`hud-btn${mood === 'golden' ? ' active' : ''}`}
-                    onClick={() => setMood('golden')}
-                  >
-                    <SunHorizon size={15} weight="regular" aria-hidden="true" />
-                    Atardecer
-                  </button>
-                  <button
-                    type="button"
-                    className={`hud-btn${mood === 'night' ? ' active' : ''}`}
-                    onClick={() => setMood('night')}
-                  >
-                    <MoonStars size={15} weight="regular" aria-hidden="true" />
-                    Guardia IA
-                  </button>
-                </div>
-
-                <div
-                  className={`hud-strip${isDarkHud ? ' dark-mood' : ''}`}
-                  role="group"
-                  aria-label="Acciones rápidas de oficina"
-                >
-                  <button
-                    type="button"
-                    className={`hud-btn${overrides.meetingActive ? ' active' : ''}`}
-                    onClick={() => handleInteractLandmark('boardroom')}
-                  >
-                    <UsersThree size={15} weight="regular" aria-hidden="true" />
-                    Sala Alierta
-                  </button>
-                  <button
-                    type="button"
-                    className={`hud-btn${overrides.coffeeBreakActive ? ' active' : ''}`}
-                    onClick={() => handleInteractLandmark('coffee')}
-                  >
-                    <Coffee size={15} weight="regular" aria-hidden="true" />
-                    Café
-                  </button>
-                  <button
-                    type="button"
-                    className="hud-btn"
-                    onClick={() => handleInteractLandmark('reception_mail')}
-                  >
-                    <EnvelopeSimple size={15} weight="regular" aria-hidden="true" />
-                    Señal CRM
-                  </button>
-                </div>
-              </div>
-
-              <div className="hud-group">
-                <div className={`hud-strip${isDarkHud ? ' dark-mood' : ''}`}>
-                  <button
-                    type="button"
-                    className={`hud-btn${ambientLife ? ' active' : ''}`}
-                    onClick={() => {
-                      setAmbientLife((prev) => {
-                        const next = !prev;
-                        if (next) setAmbientTrigger((n) => n + 1);
-                        return next;
-                      });
-                    }}
-                  >
-                    <Sparkle size={15} weight="regular" aria-hidden="true" />
-                    {ambientLife ? 'Vida sim: ON' : 'Vida sim: OFF'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`hud-btn${bubbleMode !== 'none' ? ' active' : ''}`}
-                    onClick={() =>
-                      setBubbleMode((m) => (m === 'smart' ? 'all' : m === 'all' ? 'none' : 'smart'))
-                    }
-                  >
-                    <ChatCircleDots size={15} weight="regular" aria-hidden="true" />
-                    {bubbleMode === 'smart'
-                      ? 'Globos: Activos'
-                      : bubbleMode === 'all'
-                        ? 'Globos: Todos'
-                        : 'Globos: Ocultos'}
-                  </button>
-                  <button
-                    type="button"
-                    className={`hud-btn${showPulses ? ' active' : ''}`}
-                    onClick={() => setShowPulses((p) => !p)}
-                  >
-                    <Lightning size={15} weight="regular" aria-hidden="true" />
-                    Pulsos
-                  </button>
-                </div>
-
-                <div className={`hud-metrics mono${isDarkHud ? ' dark-mood' : ''}`}>
-                  <span>{metrics.fps} FPS</span>
-                  <span>{metrics.frameMs} ms</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Prominent Interactive Human Checkpoint Banner when paused */}
             {scene.checkpoint && (
-              <section
-                className="checkpoint-banner"
-                aria-label="Acción humana requerida"
-              >
-                <h2>
-                  <WarningCircle size={17} weight="fill" color="#D5A13D" aria-hidden="true" />
-                  {scene.checkpoint.title}
-                </h2>
+              <section className="checkpoint-banner" aria-labelledby="decision-title">
+                <div className="decision-sender">
+                  <span className="decision-avatar" aria-hidden="true">E</span>
+                  <span><strong>Elena</strong><br />Dirección</span>
+                </div>
+                <h2 id="decision-title" tabIndex={-1} ref={checkpointHeadingRef}>{scene.checkpoint.title}</h2>
                 <p>{scene.checkpoint.text}</p>
                 {scene.checkpoint.priceBand && (
-                  <span className="checkpoint-price mono">{scene.checkpoint.priceBand}</span>
+                  <span className="checkpoint-price">{scene.checkpoint.priceBand}</span>
                 )}
                 <div className="checkpoint-actions">
                   {scene.checkpoint.options.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
-                      className={`btn ${opt.tone === 'primary' ? 'approve' : ''}`}
+                      className={`btn${opt.tone === 'primary' ? ' primary' : ''}`}
                       onClick={() => handleCheckpointAction(opt.id)}
                     >
                       {opt.label}
@@ -635,43 +514,41 @@ export function App() {
               </section>
             )}
 
-            {/* Bottom Camera Presets Dock */}
             <div className="camera-dock">
-              <div
-                className={`camera-pills${isDarkHud ? ' dark-mood' : ''}`}
-                role="group"
-                aria-label="Cámaras por zona"
-              >
-                {CAMERA_PRESETS.map((preset) => (
+              <div className="camera-pills" role="group" aria-label="Vistas de la sede">
+                {CAMERA_PRESETS.filter((preset) => preset.id === 'overview' || preset.id === 'campus').map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     className={`hud-btn${!followSelected && cameraPreset === preset.id ? ' active' : ''}`}
+                    aria-pressed={!followSelected && cameraPreset === preset.id}
                     onClick={() => jumpCamera(preset.id)}
                   >
                     {preset.shortLabel}
                   </button>
                 ))}
               </div>
-
-              <span className={`camera-hint${isDarkHud ? ' dark-mood' : ''}`}>
-                Arrastra para rotar · Rueda para zoom · Click en agentes, pizarras, café o PC 1986
-              </span>
             </div>
           </div>
 
-          {/* ==================== BOTTOM 34-EVENT REPLAY TIMELINE ==================== */}
-          <div className="timeline-bar" role="region" aria-label="Control de secuencia de eventos">
+          <div className="timeline-bar" role="region" aria-label="Demostración de Nortia Industrial">
             <button
+              ref={playButtonRef}
               type="button"
               className="btn primary"
+              disabled={Boolean(checkpointKind)}
               onClick={() => {
-                clearOverrides();
-                if (eventCursor >= MOCK_EVENTS.length) setEventCursor(1);
+                if (finished || eventCursor === 0) {
+                  setOverrides(INITIAL_OVERRIDES);
+                  setEventCursor(1);
+                  jumpCamera('overview');
+                } else if (!playing) {
+                  clearOverrides();
+                }
                 setPlaying((p) => !p);
               }}
             >
-              {playing ? (
+              {checkpointKind ? 'En pausa' : playing ? (
                 <>
                   <Pause size={14} weight="fill" aria-hidden="true" />
                   Pausar
@@ -679,85 +556,12 @@ export function App() {
               ) : (
                 <>
                   <Play size={14} weight="fill" aria-hidden="true" />
-                  Reproducir ciclo
+                  {finished ? 'Volver a empezar' : eventCursor === 0 ? 'Iniciar demo' : 'Continuar demo'}
                 </>
               )}
             </button>
 
-            <button
-              type="button"
-              className="btn sm"
-              aria-label="Evento anterior"
-              onClick={() => {
-                setPlaying(false);
-                clearOverrides();
-                setEventCursor((c) => Math.max(0, c - 1));
-              }}
-            >
-              <SkipBack size={14} aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              className="btn sm"
-              aria-label="Evento siguiente"
-              onClick={() => {
-                setPlaying(false);
-                clearOverrides();
-                setEventCursor((c) => Math.min(MOCK_EVENTS.length, c + 1));
-              }}
-            >
-              <SkipForward size={14} aria-hidden="true" />
-            </button>
-
-            <input
-              type="range"
-              className="timeline-scrubber"
-              min={0}
-              max={MOCK_EVENTS.length}
-              value={eventCursor}
-              aria-label="Cursor de eventos del expediente Nortia Industrial"
-              onChange={(e) => {
-                setPlaying(false);
-                clearOverrides();
-                setEventCursor(Number(e.target.value));
-              }}
-            />
-
-            <strong className="mono" style={{ fontSize: 12 }}>
-              #{eventCursor}/{MOCK_EVENTS.length}
-            </strong>
-
-            <button
-              type="button"
-              className="btn sm"
-              onClick={() => {
-                setPlaying(false);
-                clearOverrides();
-                setEventCursor(3);
-                jumpCamera('director');
-              }}
-            >
-              Alcance #3
-            </button>
-            <button
-              type="button"
-              className="btn sm"
-              onClick={() => {
-                setPlaying(false);
-                clearOverrides();
-                setEventCursor(21);
-                jumpCamera('boardroom');
-              }}
-            >
-              Aprobación #21
-            </button>
-
-            <span className="timeline-caption">
-              {typeof scene.lastEvent?.payload?.title === 'string'
-                ? scene.lastEvent.payload.title
-                : 'Oficina lista para iniciar'}
-            </span>
+            <span className="timeline-caption">{checkpointKind ? 'El equipo espera tu decisión' : activity}</span>
           </div>
         </main>
 
@@ -808,33 +612,21 @@ export function App() {
               hidden={activeTab !== 'project' ? ('until-found' as unknown as boolean) : undefined}
             >
               <div className="panel-inner">
-                <div>
+                <div className="project-summary">
                   <h2 className="panel-title">Nortia Industrial</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
-                    Ciclo agéntico completo · supervisión humana obligatoria
-                  </p>
-                </div>
-
-                <div className="kpi-strip">
-                  <div className="kpi-box">
-                    <span className="kpi-val mono">
-                      {completedTasks}/{scene.planTasks.length}
-                    </span>
-                    <span className="kpi-lbl">Tareas DAG</span>
-                  </div>
-                  <div className="kpi-box">
-                    <span className="kpi-val mono">{activeAgentsCount}/8</span>
-                    <span className="kpi-lbl">Activos ahora</span>
-                  </div>
-                  <div className="kpi-box">
-                    <span className="kpi-val mono">{scene.artifacts.length}/5</span>
-                    <span className="kpi-lbl">Entregables</span>
-                  </div>
+                  <p className="panel-subtitle">Ampliación de la plataforma de datos</p>
+                  <p className="project-status">{checkpointKind ? PROJECT_LABEL.paused : PROJECT_LABEL[scene.status]}</p>
+                  <progress
+                    value={completedTasks}
+                    max={scene.planTasks.length}
+                    aria-label="Tareas completadas"
+                  />
+                  <span className="panel-subtitle">{completedTasks} de {scene.planTasks.length} tareas completadas</span>
                 </div>
 
                 <div>
                   <h3 className="section-head" style={{ marginBottom: 8 }}>
-                    Equipo digital (8 roles)
+                    Equipo
                   </h3>
                   <ul className="roster-list">
                     {AGENT_ORDER.map((id) => {
@@ -856,12 +648,9 @@ export function App() {
                               />
                               <span>
                                 <strong>{prof.displayName}</strong>
-                                <span className="roster-role">{prof.zoneLabel}</span>
                               </span>
                             </span>
-                            <span className="status-chip" style={{ background: meta.color }}>
-                              {meta.shortLabel}
-                            </span>
+                            <span className="status-chip">{meta.shortLabel}</span>
                           </button>
                         </li>
                       );
@@ -869,40 +658,23 @@ export function App() {
                   </ul>
                 </div>
 
-                <div>
-                  <h3 className="section-head" style={{ marginBottom: 8 }}>
-                    Plan DAG validado ({scene.includesTraining ? 'con formación' : 'sin formación'})
-                  </h3>
+                <details className="panel-details">
+                  <summary>Plan de trabajo</summary>
                   <ul className="dag-list">
                     {scene.planTasks.map((t) => {
-                      const col =
-                        t.state === 'completed'
-                          ? '#36966C'
-                          : t.state === 'running'
-                            ? '#00B0F0'
-                            : t.state === 'waiting'
-                              ? '#D5A13D'
-                              : '#8A97A4';
                       return (
                         <li key={t.id} className="dag-item">
-                          <div>
-                            <strong>
-                              {t.id.toUpperCase()} · {AGENT_PROFILES[t.agent].name}
-                            </strong>
-                            <span className="dag-sub">{t.instruction}</span>
-                          </div>
-                          <span className="status-chip" style={{ background: col }}>
-                            {t.state}
-                          </span>
+                          <strong>{taskLabel(t.agent)}</strong>
+                          <span className="status-chip">{TASK_LABEL[t.state]}</span>
                         </li>
                       );
                     })}
                   </ul>
-                </div>
+                </details>
 
                 <div>
                   <h3 className="section-head" style={{ marginBottom: 8 }}>
-                    Entregables verificados
+                    Resultados de la demo
                   </h3>
                   {scene.artifacts.length > 0 ? (
                     <ul className="artifact-list">
@@ -911,12 +683,9 @@ export function App() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                             <FileText size={16} color="#115293" aria-hidden="true" />
                             <div>
-                              <strong className="mono" style={{ fontSize: 11.5 }}>
-                                {art.name}
-                              </strong>
+                              <strong>{resultLabel(art.agent)}</strong>
                               <span className="dag-sub">
                                 {AGENT_PROFILES[art.agent].displayName}
-                                {art.draft ? ' · BORRADOR' : ''}
                               </span>
                             </div>
                           </div>
@@ -925,9 +694,7 @@ export function App() {
                       ))}
                     </ul>
                   ) : (
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)' }}>
-                      Avanza el ciclo de eventos para ver generarse los 5 entregables reales.
-                    </p>
+                    <p className="panel-subtitle">Aparecerán cuando el equipo complete sus tareas.</p>
                   )}
                 </div>
               </div>
@@ -947,19 +714,21 @@ export function App() {
                 <div>
                   <h2 className="panel-title">{inspectedProfile.displayName}</h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                    <span className="status-chip" style={{ background: inspectedMeta.color }}>
+                    <span className="status-chip">
+                      <span className="status-dot" style={{ background: inspectedMeta.color }} aria-hidden="true" />
                       {inspectedMeta.label}
                     </span>
                     <button
                       type="button"
                       className={`btn sm${followSelected ? ' primary' : ''}`}
+                      aria-pressed={followSelected}
                       onClick={() => {
                         setSelectedAgent(inspectedId);
                         setFollowSelected((f) => !f);
                       }}
                     >
                       <ArrowsOutCardinal size={13} aria-hidden="true" />
-                      {followSelected ? 'Siguiendo cámara' : 'Seguir agente'}
+                      Seguir con cámara
                     </button>
                   </div>
                 </div>
@@ -970,17 +739,11 @@ export function App() {
                   <dt>Rol</dt>
                   <dd>{inspectedProfile.role}</dd>
                   <dt>Actividad</dt>
-                  <dd className="mono">{inspectedRuntime.activity}</dd>
-                  <dt>Tarea actual</dt>
-                  <dd>{inspectedRuntime.currentTaskTitle}</dd>
-                  <dt>Semántica</dt>
-                  <dd>{inspectedMeta.caption}</dd>
+                  <dd>{inspectedRuntime.bubbleText}</dd>
                 </dl>
 
-                <div>
-                  <h3 className="section-head" style={{ marginBottom: 8 }}>
-                    Probar interacciones con el entorno
-                  </h3>
+                <details className="panel-details">
+                  <summary>Probar acciones del agente</summary>
                   <div className="action-grid">
                     <button
                       type="button"
@@ -1004,11 +767,11 @@ export function App() {
                           activity: 'whiteboard',
                           state: 'planning',
                           holdingProp: 'tablet',
-                          bubbleText: 'Revisando dependencias en la pizarra DAG…',
+                          bubbleText: 'Revisando el plan de trabajo',
                         })
                       }
                     >
-                      Ir a pizarra DAG
+                      Ir a la pizarra
                     </button>
                     <button
                       type="button"
@@ -1046,11 +809,11 @@ export function App() {
                           activity: 'arch_board',
                           state: 'collaborating',
                           holdingProp: 'tablet',
-                          bubbleText: 'Contrastando nodos de Microsoft Fabric en Soluciones…',
+                          bubbleText: 'Revisando el diseño de la solución',
                         })
                       }
                     >
-                      Ir a pizarra Fabric
+                      Ir a Soluciones
                     </button>
                     <button
                       type="button"
@@ -1060,7 +823,7 @@ export function App() {
                           activity: 'terrace',
                           state: 'idle',
                           holdingProp: 'coffee',
-                          bubbleText: 'Saliendo a la terraza cerámica exterior a tomar el aire…',
+                          bubbleText: 'Un descanso en la terraza',
                         })
                       }
                     >
@@ -1137,12 +900,11 @@ export function App() {
                       Simular error
                     </button>
                   </div>
-                </div>
+                </details>
 
-                <div>
-                  <h3 className="section-head" style={{ marginBottom: 6 }}>
-                    Herramientas autorizadas
-                  </h3>
+                <details className="panel-details">
+                  <summary>Detalles técnicos</summary>
+                  <h3 className="section-head">Herramientas autorizadas</h3>
                   <ul className="tag-row">
                     {(inspectedRuntime.tools.length > 0
                       ? inspectedRuntime.tools
@@ -1153,12 +915,7 @@ export function App() {
                       </li>
                     ))}
                   </ul>
-                </div>
-
-                <div>
-                  <h3 className="section-head" style={{ marginBottom: 6 }}>
-                    Fuentes trazables
-                  </h3>
+                  <h3 className="section-head">Fuentes</h3>
                   <ul className="tag-row">
                     {(inspectedRuntime.sources.length > 0
                       ? inspectedRuntime.sources
@@ -1169,13 +926,7 @@ export function App() {
                       </li>
                     ))}
                   </ul>
-                </div>
-
-                <div className="callout-note">
-                  <strong>Contrato listo para backend:</strong> este inspector lee exclusivamente{' '}
-                  <code>OfficeSceneState</code> derivado del stream <code>OfficeEvent[]</code>.
-                  Nunca expone prompts ni razonamiento interno.
-                </div>
+                </details>
               </div>
             </div>
 
@@ -1191,40 +942,53 @@ export function App() {
             >
               <div className="panel-inner">
                 <div>
-                  <h2 className="panel-title">Stream de 34 eventos</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
-                    Pulsa cualquier evento para saltar directamente a ese estado en la oficina 3D.
-                  </p>
+                  <h2 className="panel-title">Actividad del proyecto</h2>
+                  <p className="panel-subtitle">{activity}</p>
                 </div>
-
-                <ol className="event-log">
-                  {MOCK_EVENTS.map((ev) => {
-                    const isCurrent = ev.sequence === eventCursor;
-                    const title = typeof ev.payload.title === 'string' ? ev.payload.title : ev.type;
-                    return (
-                      <li key={ev.event_id}>
-                        <button
-                          type="button"
-                          className={`roster-btn${isCurrent ? ' selected' : ''}`}
-                          onClick={() => {
-                            setPlaying(false);
-                            clearOverrides();
-                            setEventCursor(ev.sequence);
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <div className="event-row-top">
-                              <strong className="mono" style={{ fontSize: 11 }}>
-                                #{ev.sequence} · {ev.type}
-                              </strong>
+                <div>
+                  <h3 className="section-head">Momentos clave</h3>
+                  <div className="settings-row">
+                    <button type="button" className="btn" onClick={() => seek(SCOPE_PAUSE)}>Decidir la formación</button>
+                    <button type="button" className="btn" onClick={() => seek(OFFER_PAUSE)}>Revisar oferta</button>
+                  </div>
+                </div>
+                <details className="panel-details">
+                  <summary>Registro de eventos</summary>
+                  <div className="event-controls">
+                    <button type="button" className="btn sm" aria-label="Evento anterior" disabled={eventCursor === 0} onClick={() => seek(eventCursor - 1)}>
+                      <SkipBack size={14} aria-hidden="true" />
+                    </button>
+                    <input type="range" className="timeline-scrubber" min={0} max={MOCK_EVENTS.length} value={eventCursor} aria-label="Posición en la demo" onChange={(e) => seek(Number(e.target.value))} />
+                    <button type="button" className="btn sm" aria-label="Evento siguiente" disabled={finished} onClick={() => seek(eventCursor + 1)}>
+                      <SkipForward size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <ol className="event-log">
+                    {MOCK_EVENTS.map((ev) => {
+                      const isCurrent = ev.sequence === eventCursor;
+                      const title = typeof ev.payload.title === 'string' ? ev.payload.title : ev.type;
+                      return (
+                        <li key={ev.event_id}>
+                          <button
+                            type="button"
+                            className={`roster-btn${isCurrent ? ' selected' : ''}`}
+                            onClick={() => seek(ev.sequence)}
+                            aria-current={isCurrent ? 'step' : undefined}
+                          >
+                            <div style={{ minWidth: 0 }}>
+                              <div className="event-row-top">
+                                <strong className="mono" style={{ fontSize: 11 }}>
+                                  {ev.sequence}. {eventLabel(ev, scene.includesTraining)}
+                                </strong>
+                              </div>
+                              <span className="roster-role">{ev.type} · {title}</span>
                             </div>
-                            <span className="roster-role">{title}</span>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </details>
               </div>
             </div>
 
@@ -1240,44 +1004,85 @@ export function App() {
             >
               <div className="panel-inner">
                 <div>
-                  <h2 className="panel-title">Dirección visual · DAT Alierta</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
-                    Interpretación creativa de la futura sede de Integra en Zaragoza (IDOM · 2029).
-                  </p>
+                  <h2 className="panel-title">Vista de la oficina</h2>
+                  <p className="panel-subtitle">Arrastra para girar y usa la rueda para acercarte.</p>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <label style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="view-settings">
+                  <label htmlFor="office-camera">Zona de la oficina</label>
+                  <select
+                    id="office-camera"
+                    value={followSelected ? '' : cameraPreset}
+                    onChange={(e) => {
+                      const preset = CAMERA_PRESETS.find((item) => item.id === e.target.value);
+                      if (preset) jumpCamera(preset.id);
+                    }}
+                  >
+                    {followSelected && <option value="" disabled>Siguiendo a un agente</option>}
+                    {CAMERA_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.shortLabel}</option>)}
+                  </select>
+                  <div className="settings-row" role="group" aria-label="Luz de la oficina">
+                    <button type="button" className="btn" aria-pressed={mood === 'day'} onClick={() => setMood('day')}><Sun size={16} aria-hidden="true" />Día</button>
+                    <button type="button" className="btn" aria-pressed={mood === 'golden'} onClick={() => setMood('golden')}><SunHorizon size={16} aria-hidden="true" />Atardecer</button>
+                    <button type="button" className="btn" aria-pressed={mood === 'night'} onClick={() => setMood('night')}><MoonStars size={16} aria-hidden="true" />Noche</button>
+                  </div>
+                  <label>
                     <input
                       type="checkbox"
                       checked={reducedMotion}
                       onChange={(e) => setReducedMotion(e.target.checked)}
                     />
-                    Reducir movimiento y desplazamientos
+                    Reducir movimiento
                   </label>
-                  <button type="button" className="btn" onClick={clearOverrides}>
-                    Sincronizar escena con eventos (limpiar pruebas)
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => heritageDialogRef.current?.showModal()}
-                  >
-                    Abrir Easter Egg · PC 1986 Calatayud
-                  </button>
+                  <label>
+                    <input type="checkbox" checked={ambientLife} onChange={(e) => {
+                      setAmbientLife(e.target.checked);
+                      if (e.target.checked) setAmbientTrigger((n) => n + 1);
+                    }} />
+                    Movimiento de fondo
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={showPulses} onChange={(e) => setShowPulses(e.target.checked)} />
+                    Mostrar encargos en el plano
+                  </label>
+                  <label htmlFor="office-labels">Etiquetas de los agentes</label>
+                  <select id="office-labels" value={bubbleMode} onChange={(e) => {
+                    const mode = e.target.value;
+                    if (mode === 'smart' || mode === 'all' || mode === 'none') setBubbleMode(mode);
+                  }}>
+                    <option value="smart">Según la vista</option>
+                    <option value="all">Mostrar todas</option>
+                    <option value="none">Solo nombres</option>
+                  </select>
                 </div>
 
-                <div className="callout-note">
-                  <strong>Assets 3D y licencias auditadas:</strong>
-                  <br />• 34 muebles GLB:{' '}
-                  <strong>Kenney Furniture Kit 2.0 (CC0)</strong>
-                  <br />• 16 piezas exteriores GLB (árboles, vehículos, pabellones):{' '}
-                  <strong>Kenney Nature / Car / City Kits (CC0)</strong>
-                  <br />• Suelo roble PBR y mapa IBL HDRI:{' '}
-                  <strong>Poly Haven (CC0)</strong>
-                  <br />• Logotipo vectorial oficial:{' '}
-                  <strong>Integra Tecnología</strong> (permiso hackathon; no producto oficial).
-                </div>
+                <button type="button" className="btn" onClick={() => heritageDialogRef.current?.showModal()}>
+                  La historia de Integra
+                </button>
+
+                <details className="panel-details">
+                  <summary>Controles de prueba</summary>
+                  <div className="settings-row">
+                    <button type="button" className="btn" aria-pressed={overrides.meetingActive} onClick={() => handleInteractLandmark('boardroom')}>
+                      <UsersThree size={15} aria-hidden="true" />Reunión
+                    </button>
+                    <button type="button" className="btn" aria-pressed={overrides.coffeeBreakActive} onClick={() => handleInteractLandmark('coffee')}>
+                      <Coffee size={15} aria-hidden="true" />Pausa café
+                    </button>
+                    <button type="button" className="btn" onClick={() => handleInteractLandmark('reception_mail')}>
+                      <EnvelopeSimple size={15} aria-hidden="true" />Nueva oportunidad
+                    </button>
+                  </div>
+                  <button type="button" className="btn" onClick={clearOverrides}>
+                    Restablecer la escena
+                  </button>
+                  <p className="panel-subtitle">{metrics.fps} FPS · {metrics.frameMs} ms por fotograma</p>
+                </details>
+
+                <details className="panel-details">
+                  <summary>Créditos</summary>
+                  <p>Interpretación de la futura sede de Integra en Zaragoza. Mobiliario y exterior de Kenney (CC0), texturas de Poly Haven (CC0) y logotipo de Integra Tecnología.</p>
+                </details>
               </div>
             </div>
           </div>
@@ -1296,20 +1101,18 @@ export function App() {
             alt="Integra Tecnología"
             style={{ height: 26, width: 'auto', alignSelf: 'flex-start' }}
           />
-          <h2 id="heritage-title">1986 Calatayud → 2029 DAT Alierta</h2>
+          <h2 id="heritage-title">De Calatayud al DAT Alierta</h2>
           <div className="heritage-terminal mono">
-            C:\INTEGRA&gt; HISTORY --YEARS=40
+            C:\INTEGRA&gt; HISTORY
             <br />
             1986: Primeros pasos en Calatayud (Aragón)
             <br />
-            2026: 40 aniversario · 800+ personas · 6× Microsoft Partner
+            2026: 40 años de Integra
             <br />
-            2029: Nueva sede DAT Alierta · 8.000 m² · Empresa Agéntica HQ
+            2029: Nueva sede prevista en el DAT Alierta
           </div>
           <p>
-            Cuatro décadas uniendo consultoría, tecnología y conocimiento desde Aragón. Este
-            diorama 3D imagina cómo un equipo humano dirige a especialistas digitales con
-            trazabilidad real y criterio propio.
+            Integra nació en Calatayud como empresa de informática y formación. Esta oficina imagina cómo trabajaría un equipo de especialistas digitales en su futura sede de Zaragoza.
           </p>
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
@@ -1317,7 +1120,7 @@ export function App() {
               className="btn primary"
               onClick={() => heritageDialogRef.current?.close()}
             >
-              Volver a la oficina 3D
+              Volver a la oficina
             </button>
           </div>
         </div>

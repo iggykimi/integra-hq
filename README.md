@@ -32,7 +32,7 @@ Requisitos: Node LTS (`>=20`). `apps/web` usa npm; el spike histórico usa pnpm.
    npm install
    npm run dev
    ```
-   Abrir **`http://127.0.0.1:5173/`**. Probar los 12 presets, las luces **Día / Atardecer / Guardia IA**, el play del timeline, los checkpoints humanos, los globos smart, la vida simulada y el clic en agentes, pizarras, café o PC 1986.
+   Abrir **`http://127.0.0.1:5173/`** y pulsar **Iniciar demo**. En **Actividad** se puede ir directo a las dos decisiones y en **Vista** cambiar de cámara, luz o movimiento. El PC de recepción abre la historia de Integra.
 
 2. **Ver el spike A/B original (referencia, 1 escritorio):**
    ```bash
@@ -67,8 +67,8 @@ Requisitos: Node LTS (`>=20`). `apps/web` usa npm; el spike histórico usa pnpm.
 - **Sede:** 28×20 m con atrio a doble altura, escalera, pared corporativa azul con logo Integra y reloj analógico 3D en hora real.
 - **Salas:** Sala Alierta para 8 plazas, Academia Integra reactiva a `includesTraining`, Grada IntegraTalks de roble, 2 cabinas acústicas, Data & AI Server Lab acristalado con 3 racks y Terraza Exterior en voladizo con pérgola cerámica.
 - **Campus:** 4 pabellones tecnológicos, monolito DAT Alierta · INTEGRA, aparcamiento con 4 cargas EV y 3 coches CC0, lámina de agua, carril bici con ciclista, peatones, tráfico y pradera fundida al horizonte con `<fog>`.
-- **Legibilidad:** badges icónicos compactos en Oficina/Campus; al hacer hover, clic, seguir a un agente o activarse un checkpoint se despliega el globo completo.
-- **Rendimiento:** sombras de contacto bakeadas en 1 frame, bloom selectivo, `InstancedMesh` para 180 celosías y 112 módulos de jardín vertical, y 12 presets de cámara en una sola barra a 1080p.
+- **Legibilidad:** etiquetas compactas para actividad relevante; durante una decisión se enfoca la zona y se destacan los agentes implicados. Las herramientas quedan en los detalles del agente.
+- **Rendimiento:** sombras de contacto bakeadas en 1 frame, bloom selectivo e `InstancedMesh` para 180 celosías y 112 módulos de jardín vertical.
 - **Detalle técnico y límites:** ver `apps/web/README.md`.
 
 ---

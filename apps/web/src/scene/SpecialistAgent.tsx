@@ -37,8 +37,6 @@ interface SpecialistAgentProps {
   bubbleMode: BubbleVisibilityMode;
   reducedMotion: boolean;
   checkpoint: PendingCheckpoint | null;
-  /** Future-ready slot for AI-generated face portrait texture on sculpted head */
-  faceTextureUrl?: string;
   onSelect: (id: AgentId) => void;
   onPositionReport?: (id: AgentId, pos: Vec2) => void;
 }
@@ -50,6 +48,24 @@ function lerpAngle(current: number, target: number, alpha: number): number {
   return current + diff * alpha;
 }
 
+function sculptFace() {
+  const geometry = new THREE.SphereGeometry(1, 48, 32);
+  const points = geometry.attributes.position;
+  for (let i = 0; i < points.count; i += 1) {
+    const x = points.getX(i);
+    const y = points.getY(i);
+    const z = points.getZ(i);
+    const front = Math.max(0, -z);
+    const jaw = 1 - 0.23 * Math.max(0, -y);
+    const nose = 0.033 * front * Math.exp(-((x / 0.17) ** 2 + ((y + 0.08) / 0.27) ** 2));
+    points.setXYZ(i, x * 0.167 * jaw, y * 0.194, z * 0.172 - nose);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+const faceGeometry = sculptFace();
+
 /**
  * Multi-layered architectural stylized hair sculpting tailored per specialist.
  */
@@ -58,7 +74,7 @@ function HairSculpt({ style, color }: { style: HairStyle; color: string }) {
     <group>
       {/* Sculpted crown cap */}
       <mesh position={[0, 0.056, 0.018]} scale={[1.05, 0.94, 1.06]} castShadow>
-        <sphereGeometry args={[0.188, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
+        <sphereGeometry args={[0.188, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.58]} />
         <meshStandardMaterial color={color} roughness={0.78} />
       </mesh>
 
@@ -90,8 +106,8 @@ function HairSculpt({ style, color }: { style: HairStyle; color: string }) {
             <capsuleGeometry args={[0.078, 0.17, 8, 12]} />
             <meshStandardMaterial color={color} roughness={0.76} />
           </mesh>
-          <mesh position={[-0.06, 0.13, -0.115]} rotation={[0.3, 0.25, -0.35]} castShadow>
-            <capsuleGeometry args={[0.042, 0.12, 6, 10]} />
+          <mesh position={[-0.058, 0.121, -0.122]} rotation={[0.22, 0.18, -0.77]} scale={[0.74, 1, 0.66]} castShadow>
+            <capsuleGeometry args={[0.052, 0.13, 8, 16]} />
             <meshStandardMaterial color={color} roughness={0.76} />
           </mesh>
           <mesh position={[0, -0.055, 0.132]} scale={[1.1, 1.16, 0.58]} castShadow>
@@ -237,14 +253,15 @@ export function SpecialistAgent({
   const routeIdxRef = useRef<number>(0);
   const finalYawRef = useRef<number>(profile.deskYaw);
   const seatedAtEndRef = useRef<boolean>(true);
-  const lastActivityRef = useRef<AgentActivity>(effectiveActivity);
+  const lastActivityRef = useRef<AgentActivity>('desk');
+  const strideDistanceRef = useRef(0);
   const [isWalking, setIsWalking] = useState(false);
   const [hovered, setHovered] = useState(false);
   const reportTimerRef = useRef(0);
 
   // Recompute collision-free corridor route whenever effective target activity changes
   useEffect(() => {
-    if (lastActivityRef.current === effectiveActivity) return;
+    if (lastActivityRef.current === effectiveActivity && (!reducedMotion || routeRef.current.length === 0)) return;
     lastActivityRef.current = effectiveActivity;
     const root = rootRef.current;
     const currentPos: Vec2 = root
@@ -303,6 +320,7 @@ export function SpecialistAgent({
         const step = Math.min(dist, speed * dt);
         root.position.x += (dx / dist) * step;
         root.position.z += (dz / dist) * step;
+        strideDistanceRef.current += step;
         const moveYaw = Math.atan2(-dx, -dz);
         root.rotation.y = lerpAngle(root.rotation.y, moveYaw, Math.min(1, dt * 11));
       }
@@ -324,7 +342,7 @@ export function SpecialistAgent({
     }
 
     const standing = moving || !seatedAtEndRef.current;
-    const walkCycle = t * 8.2 + seed;
+    const walkCycle = strideDistanceRef.current / (1.12 * profile.appearance.heightScale) * Math.PI * 2 + seed;
 
     // Natural eye blink every ~3.8s
     if (leftEyeGroupRef.current && rightEyeGroupRef.current) {
@@ -334,19 +352,16 @@ export function SpecialistAgent({
       rightEyeGroupRef.current.scale.y = blinkScale;
     }
 
-    // Animated speaking mouth during meetings, social banter, phone booth calls, or active waiting
+    // Small mouth movement during conversations and calls.
     if (mouthRef.current) {
       const speaking =
         !reducedMotion &&
         !moving &&
-        (effectiveActivity === 'boardroom' ||
+        ((effectiveActivity === 'boardroom' && agent.state === 'collaborating') ||
           effectiveActivity === 'phone_booth' ||
-          effectiveActivity === 'lounge_sofa' ||
-          effectiveActivity === 'lounge_chair' ||
           poseHint === 'chat' ||
-          poseHint === 'call' ||
-          agent.state === 'waiting');
-      mouthRef.current.scale.y = speaking ? 1.0 + Math.abs(Math.sin(t * 7.5 + seed)) * 1.45 : 1.0;
+          poseHint === 'call');
+      mouthRef.current.scale.y = speaking ? 0.24 + Math.abs(Math.sin(t * 5 + seed)) * 0.2 : 0.24;
     }
 
     // Pelvis height (seated on chair / lounge cushion / bleachers vs standing + walk stride bounce)
@@ -565,38 +580,26 @@ export function SpecialistAgent({
   const app = profile.appearance;
 
   const isCheckpointOwner =
-    Boolean(checkpoint) &&
-    ((checkpoint?.kind === 'scope_question' && profile.id === 'director') ||
-      (checkpoint?.kind === 'offer_approval' && (profile.id === 'offers' || profile.id === 'director')));
+    profile.id === 'director' || (checkpoint?.kind === 'offer_approval' && profile.id === 'offers');
 
   const hasRichActivity =
-    isWalking ||
-    isAmbientActive ||
-    agent.state === 'working' ||
-    agent.state === 'planning' ||
-    agent.state === 'collaborating' ||
-    agent.state === 'waiting' ||
-    agent.state === 'error' ||
-    effectiveActivity !== 'desk';
+    !isAmbientActive &&
+    (isWalking ||
+      agent.state === 'working' ||
+      agent.state === 'planning' ||
+      agent.state === 'collaborating' ||
+      agent.state === 'waiting' ||
+      agent.state === 'error' ||
+      effectiveActivity !== 'desk');
 
-  const forceFullBubble =
-    selected ||
-    hovered ||
-    isCheckpointOwner ||
-    agent.state === 'waiting' ||
-    agent.state === 'error';
+  const showLabel = checkpoint ? isCheckpointOwner : !isWideView || hasRichActivity || hovered || selected || bubbleMode !== 'smart';
 
-  const showFullBubble =
-    bubbleMode === 'all' ||
-    (bubbleMode === 'smart' && (forceFullBubble || (!isWideView && hasRichActivity)));
+  const showFullBubble = !checkpoint && (bubbleMode === 'all' || (bubbleMode === 'smart' && (selected || hovered)));
 
   // In wide views (Oficina / Campus), show crisp iconic Sims/Two Point Campus pills
   // instead of overlapping 224px cards; clicking or hovering expands immediately!
   const showIconPill =
-    !showFullBubble &&
-    bubbleMode === 'smart' &&
-    isWideView &&
-    (hasRichActivity || agent.state === 'completed');
+    !showFullBubble && bubbleMode === 'smart' && (checkpoint || hasRichActivity);
 
   const shortFirstName = profile.displayName.split('·')[0].trim();
 
@@ -766,11 +769,11 @@ export function SpecialistAgent({
             </mesh>
           )}
           {(profile.id === 'director' || profile.id === 'designer') && (
-            <mesh position={[0, 0.515, -0.015]} rotation={[0.15, 0, 0]} castShadow>
-              <torusGeometry args={[0.088, 0.026, 8, 16]} />
+            <mesh position={[0, 0.546, -0.008]} rotation={[1.44, 0, 0.16]} castShadow>
+              <torusGeometry args={[0.062, 0.016, 10, 24]} />
               <meshStandardMaterial
-                color={profile.id === 'director' ? '#43C6F0' : '#D70A8A'}
-                roughness={0.55}
+                color={profile.id === 'director' ? '#5FB3BC' : '#B64E72'}
+                roughness={0.82}
               />
             </mesh>
           )}
@@ -905,23 +908,8 @@ export function SpecialistAgent({
 
           {/* Sculpted Expressive Head + Blinking Eyes + Smile + Hair + Accessories */}
           <group ref={headRef} position={[0, 0.75, 0]}>
-            <mesh scale={[0.94, 1.06, 0.96]} castShadow>
-              <sphereGeometry args={[0.182, 22, 18]} />
-              <meshStandardMaterial color={app.skin} roughness={0.7} />
-            </mesh>
-            {/* Sculpted nose bridge */}
-            <mesh position={[0, -0.012, -0.178]} scale={[0.7, 1.15, 0.85]}>
-              <sphereGeometry args={[0.021, 8, 8]} />
-              <meshStandardMaterial color={app.skin} roughness={0.7} />
-            </mesh>
-            {/* Subtle warm cheeks */}
-            <mesh position={[-0.088, -0.032, -0.146]} scale={[1.2, 0.7, 0.5]}>
-              <sphereGeometry args={[0.025, 8, 8]} />
-              <meshStandardMaterial color="#E69A8D" transparent opacity={0.28} roughness={0.9} />
-            </mesh>
-            <mesh position={[0.088, -0.032, -0.146]} scale={[1.2, 0.7, 0.5]}>
-              <sphereGeometry args={[0.025, 8, 8]} />
-              <meshStandardMaterial color="#E69A8D" transparent opacity={0.28} roughness={0.9} />
+            <mesh geometry={faceGeometry} castShadow>
+              <meshStandardMaterial color={app.skin} roughness={0.82} />
             </mesh>
             {/* Ears */}
             <mesh position={[-0.174, -0.01, 0.012]}>
@@ -937,12 +925,12 @@ export function SpecialistAgent({
 
             {/* Expressive Eyes (Sclera + Dark Iris + Specular Catchlight + Blink) */}
             <group ref={leftEyeGroupRef} position={[-0.058, 0.014, -0.166]}>
-              <mesh scale={[1.05, 1.12, 0.6]}>
+              <mesh scale={[1.13, 0.73, 0.53]}>
                 <sphereGeometry args={[0.022, 10, 10]} />
-                <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
+                <meshStandardMaterial color="#F5EDE3" roughness={0.36} />
               </mesh>
               <mesh position={[0, 0, -0.009]}>
-                <sphereGeometry args={[0.0145, 10, 10]} />
+                <sphereGeometry args={[0.011, 12, 10]} />
                 <meshStandardMaterial color="#18222E" roughness={0.18} />
               </mesh>
               <mesh position={[-0.005, 0.005, -0.021]}>
@@ -951,12 +939,12 @@ export function SpecialistAgent({
               </mesh>
             </group>
             <group ref={rightEyeGroupRef} position={[0.058, 0.014, -0.166]}>
-              <mesh scale={[1.05, 1.12, 0.6]}>
+              <mesh scale={[1.13, 0.73, 0.53]}>
                 <sphereGeometry args={[0.022, 10, 10]} />
-                <meshStandardMaterial color="#FFFFFF" roughness={0.2} />
+                <meshStandardMaterial color="#F5EDE3" roughness={0.36} />
               </mesh>
               <mesh position={[0, 0, -0.009]}>
-                <sphereGeometry args={[0.0145, 10, 10]} />
+                <sphereGeometry args={[0.011, 12, 10]} />
                 <meshStandardMaterial color="#18222E" roughness={0.18} />
               </mesh>
               <mesh position={[-0.005, 0.005, -0.021]}>
@@ -985,10 +973,10 @@ export function SpecialistAgent({
             <mesh
               ref={mouthRef}
               position={[0, -0.062, -0.166]}
-              rotation={[0, 0, agent.state === 'error' ? Math.PI : 0]}
+              scale={[1, 0.24, 0.42]}
             >
-              <torusGeometry args={[0.026, 0.0065, 6, 12, Math.PI]} />
-              <meshStandardMaterial color="#8E4E4A" roughness={0.6} />
+              <sphereGeometry args={[0.024, 16, 12]} />
+              <meshStandardMaterial color="#935852" roughness={0.76} />
             </mesh>
 
             {/* Optional Neat Beard */}
@@ -1060,13 +1048,14 @@ export function SpecialistAgent({
       )}
 
       {/* 3D In-World Speech Bubble / Iconic Badge (cleans wide views; expands on select/hover/zoom) */}
-      {showFullBubble ? (
+      {showLabel && (showFullBubble ? (
         <Html
           position={[0, isWalking || !seatedAtEndRef.current ? 2.28 : 2.04, 0]}
           center
           zIndexRange={[8, 0]}
         >
-          <div
+          <button
+            type="button"
             className={`agent-bubble${selected ? ' is-selected' : ''}${isAmbientActive ? ' is-ambient' : ''}`}
             style={{ borderTopColor: isAmbientActive ? '#7B90A3' : meta.color }}
             onClick={(e) => {
@@ -1074,7 +1063,7 @@ export function SpecialistAgent({
               onSelect(profile.id);
             }}
           >
-            <div className="agent-bubble-head">
+            <span className="agent-bubble-head">
               <span
                 className="status-dot"
                 style={{ background: isAmbientActive ? '#7B90A3' : meta.color }}
@@ -1084,9 +1073,9 @@ export function SpecialistAgent({
               <span className="agent-bubble-state">
                 {isAmbientActive ? 'AMBIENTE' : meta.shortLabel}
               </span>
-            </div>
-            <p className="agent-bubble-text">{effectiveBubbleText}</p>
-          </div>
+            </span>
+            <span className="agent-bubble-text">{effectiveBubbleText}</span>
+          </button>
         </Html>
       ) : showIconPill ? (
         <Html
@@ -1127,7 +1116,7 @@ export function SpecialistAgent({
             <span>{profile.name}</span>
           </button>
         </Html>
-      )}
+      ))}
     </group>
   );
 }
