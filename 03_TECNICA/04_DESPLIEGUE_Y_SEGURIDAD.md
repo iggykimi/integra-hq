@@ -29,3 +29,14 @@ Power Automate, trigger «When a new email arrives (V3)» en buzón de pruebas, 
 | Assets/licencias | Registro ASSETS y fuentes. No redistribuir originales prohibidos. |
 
 Para medir: latencia p50/p95 de cada etapa, errores, tokens si API los ofrece, tamaño de archivo, costes según tarifas reales; sin métricas inventadas. Guardar traces operativas, no razonamiento privado.
+
+## Alineación con estándares 2026 (seguridad, regulación y telemetría)
+
+- **OWASP Top 10 for Agentic Applications (ASI01–ASI10):**
+  - *ASI01 (Goal Hijack) y ASI06 (Context Poisoning):* datos externos tratados como contenido no confiable; validación de DAG y salida JSON en backend.
+  - *ASI02 (Tool Misuse) y ASI03 (Least Agency):* allowlist de herramientas por rol, CRM/ERP en solo lectura y prohibición de envío de correo o contabilización.
+  - *ASI05 (Unexpected Code Execution):* prohibición absoluta de ejecutar código generado por LLM; DOCX/PDF/SVG/PPTX se renderizan desde plantillas deterministas.
+  - *ASI08 (Cascading Failures) y ASI10 (Rogue Agents):* tope de 8 tareas, concurrencia máxima 2, timeout por tarea y máximo 1 replanificación controlada.
+  - *ASI09 (Human-Agent Trust Exploitation):* la UI exige aprobación explícita, muestra supuestos y bandas «pendiente de validación comercial» y nunca simula éxito en modo `live`.
+- **EU AI Act (Art. 50, vigente desde agosto 2026) y AESIA (España):** transparencia visible (`LIVE / REPLAY / MOCK`), marcado explícito de borradores sintéticos (`BORRADOR`, `BORRADOR · NO CONTABILIZADO`), inventario de agentes (`04_AGENTES/agents.json`), supervisión humana efectiva con pausa/reanudación y registro auditable de decisiones.
+- **OpenTelemetry GenAI Semantic Conventions y FinOps (Agent 365):** estructurar trazas operativas en torno a spans `invoke_agent`, `plan` y `execute_tool` con payloads sensibles desactivados por defecto (*opt-in*), registrando modelo, tokens y latencia por tarea para enlazar con observabilidad y FinOps en producción.

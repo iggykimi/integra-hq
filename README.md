@@ -1,5 +1,5 @@
 # Integra HQ · Real Hack 2026
-**Dossier de investigación y arranque de proyecto | 25/11/2026**
+**Dossier de investigación y arranque de proyecto | 26/11/2026**
 
 > Una empresa agéntica real, visible como una oficina viva. Zaragoza, 2029: una interpretación creativa del futuro de Integra.
 
@@ -41,9 +41,12 @@ Incluye documentación, catálogo de recursos con enlaces, checklist de licencia
 | `04_AGENTES` | Prompts, catálogo, conocimiento y esquema de entregables |
 | `05_DESARROLLO` | Backlog, pruebas, demo de 3 minutos y guías para IA |
 | `06_PROTOTIPO_OFFLINE` | Replay visual original y autocontenido |
-| `07_CONTRATOS` | JSON Schema, fixtures y tipos TypeScript |
+| `07_CONTRATOS` | JSON Schema (8 agentes y entregables), fixtures sintéticos y tipos TypeScript |
 | `08_RECURSOS` | Catálogo CSV, instrucciones de adquisición, control de licencias |
+| `scripts` | Validador automático de contratos, DAG, eventos, fixtures y enlaces (`validate-dossier.mjs`) |
 
-La propuesta de organización de la empresa agéntica está en `04_AGENTES/02_ESQUEMA_EMPRESA_AGENTICA.md`; la investigación de mercado, modelos y repositorios de 2026, en `01_INVESTIGACION/05_EMPRESA_AGENTICA_2026.md`. El kit de marca (logos, tokens y muestra visual) está en `08_RECURSOS/brand/`.
+La propuesta de organización de la empresa agéntica está en `04_AGENTES/02_ESQUEMA_EMPRESA_AGENTICA.md`; la investigación de mercado, Ignite 2026, protocolos (MCP/A2A/AG-UI), regulación (EU AI Act/AESIA) y modelos, en `01_INVESTIGACION/05_EMPRESA_AGENTICA_2026.md`. El kit de marca (logos, tokens y muestra visual) está en `08_RECURSOS/brand/`.
 
-La fecha de revisión de las fuentes es 25 de noviembre de 2026. Los enlaces pueden cambiar. Se distingue entre información publicada, propuestas de diseño e hipótesis técnicas no probadas.
+Para verificar la integridad del dossier y los contratos en local (requiere Node LTS, sin dependencias): `node scripts/validate-dossier.mjs`.
+
+La fecha de revisión de las fuentes es 26 de noviembre de 2026. Los enlaces pueden cambiar. Se distingue entre información publicada, propuestas de diseño e hipótesis técnicas no probadas.

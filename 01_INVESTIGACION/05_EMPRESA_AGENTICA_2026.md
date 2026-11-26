@@ -1,6 +1,6 @@
 # Empresa agéntica 2026 · investigación para Integra HQ
 
-> Revisión: 25/11/2026. Se distingue entre **hecho con fuente**, **dato de tercero no auditado** e **hipótesis**.
+> Revisión: 26/11/2026. Se distingue entre **hecho con fuente**, **dato de tercero no auditado** e **hipótesis**.
 > Objetivo: acotar. Qué existe, qué se puede reutilizar y qué no conviene construir.
 
 ## Resumen ejecutivo
@@ -34,9 +34,10 @@ Lo aprovechable: la narrativa de rol con nombre y responsabilidad, y la medició
 
 | Plataforma | Estado a 25/11/2026 | Qué aporta a Integra HQ |
 |---|---|---|
-| [Microsoft Agent 365](https://www.microsoft.com/en-us/microsoft-agent-365) | GA desde 01/05/2026; 15 USD/usuario/mes; incluido en Microsoft 365 E7 (99 USD) | Registro de agentes, identidad, observabilidad, Purview, Defender. Es la capa de gobierno para una producción real. |
-| [Microsoft Foundry](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow) | GPT-6.2 GA; workflows multiagente en preview; hosted agents; A2A | Ejecución, modelos, trazas y despliegue. El MVP no lo necesita para funcionar, pero es la salida natural a producción. |
-| [Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/whats-new) | Orquestación multiagente GA desde abril de 2026; agentes conectados; A2A | Alternativa low-code para publicar en Teams/Outlook. Útil si Integra quiere que el director viva en Microsoft 365. |
+| [Microsoft Agent 365](https://www.microsoft.com/en-us/microsoft-agent-365) | GA desde 01/05/2026; 15 USD/usuario/mes; ampliado en **Ignite 2026 (nov. 2026)** con **FinOps para IA** y analítica de negocio | Registro de agentes, identidad (Entra), observabilidad, Purview, Defender y control de gasto por agente. Es la capa de gobierno para una producción real. |
+| [Microsoft Foundry](https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/workflow) | GPT-6.2 GA; workflows multiagente en preview; hosted agents; A2A; en **Ignite 2026**: Foundry en AKS (preview), voice/browser automation GA y Windows 365 for Agents (preview) | Ejecución, modelos, trazas y despliegue. El MVP no lo necesita para funcionar, pero es la salida natural a producción. |
+| **Microsoft IQ** (Ignite 2026) | Anunciado en noviembre de 2026; unifica Work IQ, Fabric IQ, Foundry IQ y Web IQ | Capa semántica y de conocimiento sobre Microsoft Fabric para dar una «única versión de la verdad» a todos los agentes. Sustituye a nuestros `knowledge/*.md` al escalar. |
+| [Copilot Studio](https://learn.microsoft.com/en-us/microsoft-copilot-studio/whats-new) | Orquestación multiagente GA; en **Ignite 2026**: Copilot Studio Apps (runtime gestionado GA), Windows 365 for Agents y conectores cross-cloud (*Copilotforce*) | Alternativa low-code para publicar en Teams/Outlook. Útil si Integra quiere que el director viva en Microsoft 365. |
 | [Dynamics 365 Sales](https://learn.microsoft.com/en-us/dynamics365/sales/sales-qualification-agent) | Sales Qualification Agent GA; Sales Development Agent en preview (octubre de 2026) | Agentes de cualificación y prospección. No reconstruir; conectar. |
 | [Business Central](https://learn.microsoft.com/en-us/dynamics365/business-central/ai-in-bc) | Sales Order Agent y Payables Agent GA; varios buzones por empresa desde otoño de 2026 | Agentes de pedidos y facturas de proveedor. El coste se mide en Copilot Credits; un ejemplo de Microsoft para 100 solicitudes de pedido ronda 1.650 créditos/mes. |
 | [Salesforce Agentforce](https://www.salesforce.com/agentforce/multi-agent-orchestration/) | Orquestación multiagente GA en 2026; Atlas; A2A | Referencia de «front door» que enruta a especialistas y conserva contexto. |
@@ -62,15 +63,16 @@ La guerra de plataformas se libra en gobernanza, identidad y datos, no solo en e
 | [alihdrndm/ledgic](https://github.com/alihdrndm/ledgic) | MIT | Facturación de proveedor: la IA lee, el código hace el three-way match y el humano resuelve la excepción; servidor MCP | La app completa y su stack Next.js/FastAPI |
 | [a2aproject/A2A](https://github.com/a2aproject/A2A) | — | Agent Cards, ciclo de vida de tareas, streaming, autenticación | Evitar A2A en el MVP; el DAG propio basta |
 
-Los repositorios visuales (Claude Office, Agent Office, Pixel Agents, Office 3D, AI Town) ya están inventariados en `01_INVESTIGACION/02_REFERENTES_Y_REPOSITORIOS.md`. La novedad de 2026 es que la oficina pixel art se ha convertido en un patrón repetido: `fwartner/clawd-office`, `WW-AI-Lab/openclaw-office` y `harishkotra/agent-office` hacen lo mismo con distintos niveles de acabado. Ninguno es un foso defensivo.
+Los repositorios visuales (Claude Office, Agent Office, Pixel Agents, Office 3D, AI Town) ya están inventariados en `01_INVESTIGACION/02_REFERENTES_Y_REPOSITORIOS.md`. La novedad de 2026 es que la oficina pixel art y 3D isométrica se ha convertido en un patrón saturado: además de `paperclipai/companies` (`companies.sh` con empresas agénticas preconfiguradas), han proliferado proyectos como `fwartner/clawd-office`, `WW-AI-Lab/openclaw-office`, `harishkotra/agent-office`, `Munder Difflin`, `AgentSystemLabs/agent-office`, `MitchellKevin/the-agentic-office` y `zep-us/zep-pixel-agents`. Ninguno es un foso defensivo por sí solo.
 
 ## 3. Tecnología de 2026
 
-### 3.1 Protocolos: MCP y A2A
+### 3.1 Protocolos: MCP, A2A y AG-UI (+ MCP Apps)
 
-- **MCP** conecta un agente con herramientas, datos y APIs. Es la capa que ya usan Copilot Studio, Foundry y la mayoría de frameworks.
-- **A2A** conecta agentes entre sí. La versión 1.0 se publicó en abril de 2026; supera las 150 organizaciones y está alojada en la Linux Foundation, dentro de la Agentic AI Foundation desde agosto de 2026. Microsoft la soporta en Foundry y Copilot Studio; Salesforce la anuncia para conectar agentes de terceros.
-- **Para el MVP:** no hacen falta. Las herramientas son funciones TypeScript tipadas. Pero conviene diseñar los límites de cada agente como si fueran a exponerse por A2A: entrada, salida, permisos y trazabilidad. Así la evolución a producción no exige reescribir el sistema.
+- **MCP (agente ↔ herramientas/datos):** conecta un agente con herramientas, datos y APIs bajo la Agentic AI Foundation (Linux Foundation). Es la capa que ya usan Copilot Studio, Foundry y la mayoría de frameworks.
+- **A2A (agente ↔ agente):** la versión 1.0 se publicó en abril de 2026; supera las 150 organizaciones, absorbió variantes tempranas como ACP y reside en la Agentic AI Foundation (Linux Foundation). Usa *Agent Cards* y estados de tarea normalizados (`SUBMITTED`, `WORKING`, `INPUT_REQUIRED`, `COMPLETED`, `FAILED`).
+- **AG-UI (agente ↔ interfaz de usuario) y MCP Apps:** la tercera pata estandarizada en 2026. **AG-UI** define un flujo ligero basado en eventos (~16 eventos como `TOOL_CALL_START`, `STATE_DELTA`) y el patrón **interrupt-and-resume** para *Human-in-the-Loop* en frontends propios (React/Vite). **MCP Apps** cubre el caso complementario: renderizar mini-apps interactivas en *sandbox* dentro de hosts externos.
+- **Para el MVP:** no hace falta adoptar los SDK completos de MCP, A2A ni AG-UI; funciones TypeScript tipadas y nuestro contrato `07_CONTRATOS/event.schema.json` bastan. Pero diseñar las fronteras alineadas con el trío **MCP + A2A + AG-UI** permite evolucionar a producción sin reescribir la arquitectura.
 
 ### 3.2 Modelos
 
@@ -79,8 +81,8 @@ Los repositorios visuales (Claude Office, Agent Office, Pixel Agents, Office 3D,
 | GPT-6 Luna | 22/09/2026 | 1,1M | 0,10 / 0,50 | Código, diseño y tareas de alto volumen |
 | GPT-6.1 Sol | 29/09/2026 | 1,05M | 2 / 10 | Dirección, arquitectura y trabajo profesional |
 | GPT-6.1 Terra | 26/10/2026 | 1,05M | 1 / 5 | Especialistas rápidos, visión y computer use |
-| GPT-6.2 Astra | 17/11/2026 | 1,05M | 8 / 40 | Opción de máxima calidad si hay cuota |
-| GPT-6.2 Sol | 17/11/2026 | 1,05M | consultar | Opción intermedia |
+| GPT-6.2 Astra | 17/11/2026 | 1,05M | ~8–10 / 40–50 (verificar tenant) | Opción de máxima calidad si hay cuota |
+| GPT-6.2 Sol | 17/11/2026 | 1,05M | ~2 / 10 (verificar tenant) | Alternativa directa a 6.1 Sol si el tenant ya la tiene GA |
 | Claude Opus 5.5 | 22/09/2026 | 1M | 4 / 20 | Redacción y diseño; evaluar frente a Luna |
 | Claude Fable 5.2 | 09/11/2026 | 1M | 8 / 40 | Razonamiento exigente; no necesario para la demo |
 | Claude Sonnet 5.5 | 28/09/2026 | 1M | 2 / 10 | Alternativa económica |
@@ -112,6 +114,12 @@ La regla que se repite en las plataformas y frameworks de 2026: **los flujos cr�
 | Agentes commodity (leads, pedidos, facturas) | Integrar | Microsoft ya los vende y los mantiene; reconstruirlos no diferencia |
 | Oficina visual | Construir | Es la interfaz de marca y el gancho de la demo; no hay un producto que la dé hecha con la identidad de Integra |
 | Gobierno y auditoría | Comprar en producción | Agent 365, Entra, Purview y Defender; en la demo, eventos y aprobaciones |
+
+### 3.5 Regulación, seguridad y observabilidad en 2026 (España y UE)
+
+- **EU AI Act (agosto de 2026) y AESIA:** desde agosto de 2026 son exigibles las obligaciones de transparencia del **Artículo 50** (informar de interacción con IA y marcar contenido sintético). En España, **AESIA** publicó **16 guías prácticas** sobre documentación técnica, gestión de riesgos y supervisión humana. Esto convierte nuestras guardas (etiqueta `BORRADOR`, modos visibles `LIVE/REPLAY/MOCK`, trazabilidad de fuentes y aprobación humana obligatoria) en un diferencial comercial real para clientes españoles.
+- **OWASP Top 10 for Agentic Applications (ASI01–ASI10):** referencia estándar de riesgos operativos en sistemas multiagente (*ASI01 Goal Hijack*, *ASI02 Tool Misuse*, *ASI03 Identity & Privilege Abuse / least agency*, *ASI05 Unexpected Code Execution*, *ASI09 Human-Agent Trust Exploitation*).
+- **OpenTelemetry GenAI Semantic Conventions:** estandariza trazas `invoke_agent` y `execute_tool` con captura *opt-in* para prompts y argumentos sensibles, respaldando nuestra regla de no guardar razonamiento privado ni datos confidenciales por defecto.
 
 ## 4. Señales de mercado y casos
 

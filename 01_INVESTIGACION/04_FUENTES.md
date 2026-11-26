@@ -1,6 +1,6 @@
 # Bibliografía y trazabilidad
 
-Revisión: 25/11/2026. Enlaces primarios consultados en esta consolidación; las fichas pueden cambiar. Las afirmaciones se resumen, no se reproducen páginas completas.
+Revisión: 26/11/2026. Enlaces primarios consultados en esta consolidación; las fichas pueden cambiar. Las afirmaciones se resumen, no se reproducen páginas completas.
 
 ## Empresa
 - [Integra web](https://www.integratecnologia.es/) — posicionamiento, designaciones Microsoft, 40 aniversario.
@@ -54,6 +54,14 @@ Revisión: 25/11/2026. Enlaces primarios consultados en esta consolidación; las
 - [Claude Opus 5.5](https://www.anthropic.com/claude-opus-5-5) — 22/09/2026; Fable 5.2, 09/11/2026.
 - [A2A v1.0](https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year) — protocolo entre agentes, abril de 2026.
 - [Análisis completo](05_EMPRESA_AGENTICA_2026.md) — lectura, repositorios y recomendación de corte.
+
+## Actualización 26/11/2026 (Ignite 2026, protocolos UI, regulación y seguridad agéntica)
+
+- **Microsoft Ignite 2026 (17–20/11/2026):** anuncios de Microsoft IQ (Work/Fabric/Foundry/Web IQ), Agent 365 FinOps y analítica de negocio, Foundry en AKS (preview), Windows 365 for Agents y Copilot Studio Apps GA (fuentes oficiales Microsoft Learn y Tech Community).
+- [AG-UI Protocol](https://docs.ag-ui.com/) — protocolo abierto agente↔UI basado en eventos con sincronización de estado y patrón *interrupt-and-resume* para *Human-in-the-Loop*.
+- [EU AI Act · Comisión Europea](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai) y [AESIA (España)](https://aesia.digital.gob.es/) — obligaciones de transparencia del Art. 50 (agosto 2026) y 16 guías prácticas de cumplimiento en España.
+- [OWASP Top 10 for Agentic Applications](https://genai.owasp.org/) — taxonomía ASI01–ASI10 para sistemas agénticos.
+- [OpenTelemetry GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) — spans `invoke_agent` / `execute_tool` y captura *opt-in* de contenido sensible.
 
 ## Material corporativo local (25/11/2026)
 
