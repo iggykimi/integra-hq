@@ -14,25 +14,6 @@ export interface AmbientAgentOverride {
 
 export type AmbientSimMap = Partial<Record<AgentId, AmbientAgentOverride>>;
 
-const SOCIAL_LOUNGE_DIALOGUES: Array<[string, string]> = [
-  [
-    '¿Probaste ya gpt-6-luna en el plan DAG de Nortia?',
-    'Sí, vuela validando dependencias sin pasarse de latencia.',
-  ],
-  [
-    'Qué gustazo tener el lounge conectado con la terraza.',
-    'Y con la Academia al lado para preparar la formación de Nortia.',
-  ],
-  [
-    'Un espresso en el sofá antes del próximo bloque.',
-    'Perfecto, así llegamos frescos a la aprobación en Sala Alierta.',
-  ],
-  [
-    'Qué limpio ha quedado el diagrama de Microsoft Fabric.',
-    'Combina genial con las 6 diapositivas de Diseño.',
-  ],
-];
-
 /**
  * Autonomous idle office-life simulator (Sims / Two Point Campus style).
  * Adapts subtly to lighting mood (coffee/calls in Day, outdoor Terrace in Golden Hour,
@@ -53,15 +34,17 @@ export function useOfficeLifeSim(
     }
   }, [enabled, reducedMotion]);
 
-  // Immediately clear any agent that receives a real workflow task/checkpoint
+  // Background activity yields to work and to explicit visits to the same place.
   useEffect(() => {
+    const used = new Set(AGENT_ORDER.map((id) => scene.agents[id].activity));
     setSimMap((prev) => {
       let changed = false;
       const next: AmbientSimMap = { ...prev };
       for (const id of Object.keys(prev) as AgentId[]) {
         const rt = scene.agents[id];
         const isFree = (rt.state === 'idle' || rt.state === 'completed') && rt.activity === 'desk';
-        if (!isFree) {
+        const visit = prev[id];
+        if (!isFree || (visit && used.has(visit.activity))) {
           delete next[id];
           changed = true;
         }
@@ -96,35 +79,34 @@ export function useOfficeLifeSim(
           return next;
         }
 
-        // 2-agent seated sofa + armchair conversation in the Lounge!
-        if (mood !== 'night' && freeAgents.length >= 2 && activeWanderers === 0 && Math.random() < 0.45) {
-          const shuffled = [...freeAgents].sort(() => Math.random() - 0.5);
-          const a = shuffled[0];
-          const b = shuffled[1];
-          const [lineA, lineB] =
-            SOCIAL_LOUNGE_DIALOGUES[Math.floor(Math.random() * SOCIAL_LOUNGE_DIALOGUES.length)];
-          const duration = 13500 + Math.floor(Math.random() * 4500);
+        const occupied = new Set(AGENT_ORDER.map((id) => next[id]?.activity ?? scene.agents[id].activity));
+        const chosen = freeAgents[Math.floor(Math.random() * freeAgents.length)];
 
-          next[a] = {
+        if (mood !== 'night' && freeAgents.length >= 2 && activeWanderers === 0 &&
+            !occupied.has('lounge_sofa') && !occupied.has('lounge_chair') && Math.random() < 0.45) {
+          const partners = freeAgents.filter((id) => id !== chosen);
+          const partner = partners[Math.floor(Math.random() * partners.length)];
+          const expiresAt = now + 24000;
+
+          next[chosen] = {
             activity: 'lounge_sofa',
             holdingProp: 'coffee',
-            bubbleText: lineA,
+            bubbleText: 'Charlando en el café',
             poseHint: 'chat',
             iconKind: 'chat',
-            expiresAt: now + duration,
+            expiresAt,
           };
-          next[b] = {
+          next[partner] = {
             activity: 'lounge_chair',
             holdingProp: 'coffee',
-            bubbleText: lineB,
+            bubbleText: 'Charlando en el café',
             poseHint: 'chat',
             iconKind: 'chat',
-            expiresAt: now + duration,
+            expiresAt,
           };
           return next;
         }
 
-        const chosen = freeAgents[Math.floor(Math.random() * freeAgents.length)];
         const pool: Array<{
           activity: AgentActivity;
           holdingProp: 'none' | 'coffee' | 'tablet';
@@ -137,66 +119,59 @@ export function useOfficeLifeSim(
             holdingProp: 'coffee',
             poseHint: 'stretch',
             iconKind: 'sun',
-            text:
-              mood === 'golden'
-                ? 'Disfrutando el atardecer de Zaragoza en la terraza DAT Alierta…'
-                : 'Respiro breve en la terraza bajo la pérgola cerámica.',
+            text: 'Pausa en la terraza',
           },
           {
             activity: 'coffee',
             holdingProp: 'coffee',
             poseHint: 'normal',
             iconKind: 'coffee',
-            text: 'Preparando un espresso en el Rincón Café…',
+            text: 'Preparando un café',
           },
           {
             activity: 'phone_booth',
-            holdingProp: 'tablet',
+            holdingProp: 'none',
             poseHint: 'call',
             iconKind: 'phone',
-            text: 'Llamada breve en la cabina acústica · disponible enseguida.',
+            text: 'En una llamada',
           },
           {
             activity: 'auditorium',
             holdingProp: 'tablet',
             poseHint: 'normal',
             iconKind: 'book',
-            text: 'Repasando notas en la grada de roble IntegraTalks.',
+            text: 'Repasando apuntes',
           },
           {
             activity: 'academy',
             holdingProp: 'tablet',
             poseHint: 'normal',
             iconKind: 'book',
-            text: scene.includesTraining
-              ? 'Preparando materiales en Academia Integra para Nortia.'
-              : 'Revisando el aula de Academia Integra.',
+            text: 'En el aula',
           },
           {
             activity: 'retro_pc',
             holdingProp: 'none',
             poseHint: 'admire',
             iconKind: 'retro',
-            text: 'Curioseando el PC retro de 1986 en Recepción · 40 años.',
+            text: 'Mirando el PC de 1986',
           },
         ];
 
-        // Favor outdoor terrace in Golden Hour, coffee in Night mode
-        const filtered =
-          mood === 'night'
-            ? pool.filter((r) => r.activity === 'coffee' || r.activity === 'phone_booth')
-            : mood === 'golden' && Math.random() < 0.5
-              ? pool.filter((r) => r.activity === 'terrace')
-              : pool;
-
-        const pick = filtered[Math.floor(Math.random() * filtered.length)] ?? pool[0];
+        const available = pool.filter(({ activity }) => !occupied.has(activity) &&
+          (mood !== 'night' || activity === 'coffee' || activity === 'phone_booth'));
+        const goldenTerrace = mood === 'golden' && Math.random() < 0.5
+          ? available.find(({ activity }) => activity === 'terrace')
+          : undefined;
+        const pick = goldenTerrace ?? available[Math.floor(Math.random() * available.length)];
+        if (!pick) return next;
         next[chosen] = {
           activity: pick.activity,
           holdingProp: pick.holdingProp,
           bubbleText: pick.text,
           poseHint: pick.poseHint,
           iconKind: pick.iconKind,
-          expiresAt: now + 11500 + Math.floor(Math.random() * 4500),
+          expiresAt: now + 20500 + Math.floor(Math.random() * 4500),
         };
         return next;
       });

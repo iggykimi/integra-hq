@@ -69,7 +69,6 @@ export interface OfficeSceneState {
   includesTraining: boolean;
   boardroomStatus: 'available' | 'meeting' | 'approval';
   receptionAlert: boolean;
-  coffeeBrewing: boolean;
   agents: Record<AgentId, AgentRuntimeState>;
   planTasks: PlanTaskRuntime[];
   artifacts: Array<{ id: string; name: string; agent: AgentId; draft?: boolean; mime: string }>;
@@ -467,12 +466,16 @@ export function reduceOfficeSceneState(
   }
 
   if (overrides.coffeeBreakActive) {
-    const coffeeCrew: AgentId[] = ['crm', 'consultant', 'designer'];
-    coffeeCrew.forEach((id, idx) => {
-      agents[id].activity = idx === 0 ? 'coffee' : idx === 1 ? 'lounge_sofa' : 'terrace';
+    const coffeeCrew: Array<[AgentId, AgentActivity]> = [
+      ['crm', 'coffee'],
+      ['consultant', 'lounge_sofa'],
+      ['designer', 'lounge_chair'],
+    ];
+    coffeeCrew.forEach(([id, activity]) => {
+      agents[id].activity = activity;
       agents[id].state = 'idle';
       agents[id].holdingProp = 'coffee';
-      agents[id].bubbleText = AGENT_PROFILES[id].coffeeBanter[0];
+      agents[id].bubbleText = activity === 'coffee' ? 'Preparando un café' : 'Pausa café';
     });
   }
 
@@ -511,7 +514,6 @@ export function reduceOfficeSceneState(
     includesTraining,
     boardroomStatus,
     receptionAlert,
-    coffeeBrewing: overrides.coffeeBreakActive || Object.values(agents).some((a) => a.activity === 'coffee'),
     agents,
     planTasks,
     artifacts,

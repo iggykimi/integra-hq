@@ -3,8 +3,12 @@ import { Html, RoundedBox, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
+  ACADEMY_SEATS,
   BOARDROOM_SEATS,
+  type CameraPresetId,
   type LightingMood,
+  LOUNGE_CHAIR,
+  LOUNGE_SOFA,
   ZONE_META,
 } from '../state/officeLayout';
 import type { OfficeSceneState } from '../state/officeReducer';
@@ -15,7 +19,7 @@ import {
   drawBoardroomScreen,
   drawDagWhiteboard,
   drawFabricArchitectureBoard,
-  drawHeritageTotem,
+  drawHeritagePlaque,
   drawPresentationWallTv,
   drawReceptionLogoWall,
   drawRetroPcScreen,
@@ -39,8 +43,8 @@ export type LandmarkId =
 interface OfficeArchitectureProps {
   scene: OfficeSceneState;
   mood: LightingMood;
-  focusBoardroom: boolean;
-  coffeeActiveOverride?: boolean;
+  focusedView: CameraPresetId | null;
+  coffeeGuestPresent: () => boolean;
   reducedMotion: boolean;
   onInteractLandmark: (landmark: LandmarkId) => void;
 }
@@ -150,6 +154,62 @@ function InstancedTerracottaLouvers() {
         <boxGeometry args={[0.38, 0.06, 0.08]} />
         <meshStandardMaterial roughness={0.8} />
       </instancedMesh>
+    </group>
+  );
+}
+
+function HeritageRelief({ plaque }: { plaque: THREE.Texture }) {
+  const stars = useRef<THREE.InstancedMesh>(null);
+  const star = useMemo(() => {
+    const shape = new THREE.Shape();
+    for (let i = 0; i < 16; i += 1) {
+      const angle = (i * Math.PI) / 8;
+      const radius = i % 2 === 0 ? 0.127 : 0.096;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (i === 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    }
+    shape.closePath();
+    return shape;
+  }, []);
+
+  useEffect(() => {
+    const mesh = stars.current;
+    if (!mesh) return;
+    const tile = new THREE.Matrix4();
+    const glaze = ['#E8DEC1', '#437367', '#A65D46'].map((color) => new THREE.Color(color));
+    for (let row = 0; row < 3; row += 1) {
+      for (let col = 0; col < 5; col += 1) {
+        const index = row * 5 + col;
+        const ring = Math.abs(col - 2) + Math.abs(row - 1);
+        mesh.setMatrixAt(index, tile.makeTranslation((col - 2) * 0.31, 0.07 + row * 0.3, 0.083));
+        mesh.setColorAt(index, glaze[ring % glaze.length]);
+      }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, []);
+
+  return (
+    <group position={[-13.84, 1.51, 7.18]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh castShadow>
+        <boxGeometry args={[1.76, 1.62, 0.12]} />
+        <meshStandardMaterial color="#C59273" roughness={0.83} />
+      </mesh>
+      <mesh position={[0, 0.35, 0.064]} receiveShadow>
+        <boxGeometry args={[1.61, 0.86, 0.035]} />
+        <meshStandardMaterial color="#8A5949" roughness={0.94} />
+      </mesh>
+      <instancedMesh ref={stars} args={[undefined, undefined, 15]} castShadow receiveShadow>
+        <extrudeGeometry args={[star, { depth: 0.028, bevelSize: 0.007, bevelThickness: 0.008, bevelSegments: 1 }]} />
+        <meshStandardMaterial roughness={0.35} />
+      </instancedMesh>
+      <mesh position={[0, -0.396, 0.066]}>
+        <planeGeometry args={[1.61, 0.51]} />
+        <meshStandardMaterial map={plaque} roughness={0.84} />
+      </mesh>
     </group>
   );
 }
@@ -353,31 +413,32 @@ function AcousticPhoneBooth({
   );
 }
 
-function CoffeeSteamCluster({ active, reducedMotion }: { active: boolean; reducedMotion: boolean }) {
-  const refs = [useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null)];
+function CoffeeSteamCluster({ guestPresent, reducedMotion }: { guestPresent: () => boolean; reducedMotion: boolean }) {
+  const steam = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
-    if (!active || reducedMotion) return;
+    const group = steam.current;
+    if (!group) return;
+    group.visible = guestPresent();
+    if (!group.visible) return;
     const t = clock.getElapsedTime();
-    refs.forEach((ref, i) => {
-      if (!ref.current) return;
-      const p = (t * 0.42 + i * 0.33) % 1;
-      ref.current.position.y = 1.24 + p * 0.44;
-      ref.current.position.x = 10.35 + Math.sin(t * 2.1 + i * 2) * 0.04;
-      ref.current.scale.setScalar(0.8 + p * 0.7);
-      const mat = ref.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = Math.sin(p * Math.PI) * 0.42;
+    group.children.forEach((child, i) => {
+      const p = (t * 0.61 + i / 3) % 1;
+      child.position.set(Math.sin(t * 2.1 + i * 2) * p * 0.065, p * 0.28, p * 0.12);
+      child.scale.set(0.7 + p, 1.25 + p, 0.8 + p);
+      const mat = (child as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>).material;
+      mat.opacity = Math.sin(p * Math.PI) * 0.28;
     });
   });
 
-  if (!active || reducedMotion) return null;
+  if (reducedMotion) return null;
 
   return (
-    <group>
-      {refs.map((ref, idx) => (
-        <mesh key={idx} ref={ref} position={[10.35, 1.3 + idx * 0.1, -9.0]}>
-          <sphereGeometry args={[0.044, 8, 8]} />
-          <meshBasicMaterial color="#FFFFFF" transparent opacity={0.32} />
+    <group ref={steam} position={[10.342, 1.196, -9.016]} visible={false}>
+      {[0, 1, 2].map((idx) => (
+        <mesh key={idx}>
+          <sphereGeometry args={[0.036, 8, 8]} />
+          <meshBasicMaterial color="#FFFFFF" transparent opacity={0} depthWrite={false} />
         </mesh>
       ))}
     </group>
@@ -398,11 +459,13 @@ function CoffeeSteamCluster({ active, reducedMotion }: { active: boolean; reduce
 export function OfficeArchitecture({
   scene,
   mood,
-  focusBoardroom,
-  coffeeActiveOverride = false,
+  focusedView,
+  coffeeGuestPresent,
   reducedMotion,
   onInteractLandmark,
 }: OfficeArchitectureProps) {
+  const focusBoardroom = focusedView === 'boardroom';
+  const focusAcademy = focusedView === 'academy';
   const [floorDiff, floorNor, floorRough] = useTexture([
     '/assets/textures/laminate_floor_02_diff_1k.jpg',
     '/assets/textures/laminate_floor_02_nor_gl_1k.jpg',
@@ -440,7 +503,7 @@ export function OfficeArchitecture({
   }, []);
 
   const receptionWallTex = useMemo(() => createCanvasTexture(640, 290), []);
-  const heritageTotemTex = useMemo(() => createCanvasTexture(380, 440), []);
+  const heritagePlaqueTex = useMemo(() => createCanvasTexture(570, 180), []);
   const dagBoardTex = useMemo(() => createCanvasTexture(780, 410), []);
   const fabricBoardTex = useMemo(() => createCanvasTexture(750, 340), []);
   const slidesTvTex = useMemo(() => createCanvasTexture(512, 300), []);
@@ -454,9 +517,9 @@ export function OfficeArchitecture({
   }, [logoWhite, receptionWallTex]);
 
   useEffect(() => {
-    drawHeritageTotem(heritageTotemTex.ctx, logoWhite);
-    heritageTotemTex.texture.needsUpdate = true;
-  }, [logoWhite, heritageTotemTex]);
+    drawHeritagePlaque(heritagePlaqueTex.ctx);
+    heritagePlaqueTex.texture.needsUpdate = true;
+  }, [heritagePlaqueTex]);
 
   useEffect(() => {
     drawDagWhiteboard(dagBoardTex.ctx, scene.planTasks, scene.includesTraining, scene.status);
@@ -501,7 +564,7 @@ export function OfficeArchitecture({
   useEffect(() => {
     return () => {
       receptionWallTex.texture.dispose();
-      heritageTotemTex.texture.dispose();
+      heritagePlaqueTex.texture.dispose();
       dagBoardTex.texture.dispose();
       fabricBoardTex.texture.dispose();
       slidesTvTex.texture.dispose();
@@ -511,7 +574,7 @@ export function OfficeArchitecture({
     };
   }, [
     receptionWallTex,
-    heritageTotemTex,
+    heritagePlaqueTex,
     dagBoardTex,
     fabricBoardTex,
     slidesTvTex,
@@ -613,11 +676,6 @@ export function OfficeArchitecture({
         <boxGeometry args={[6.7, 0.012, 7.2]} />
         <meshStandardMaterial color="#ACAFA5" roughness={1} />
       </mesh>
-      {/* Academia Integra subtle cool carpet */}
-      <mesh position={[3.6, 0.006, -5.8]} receiveShadow>
-        <boxGeometry args={[6.4, 0.012, 7.2]} />
-        <meshStandardMaterial color="#DCE6E3" roughness={0.92} />
-      </mesh>
       {/* Grand Central Boulevard corridor guide */}
       <mesh position={[2.2, 0.005, 0.2]} receiveShadow>
         <boxGeometry args={[22.8, 0.008, 2.3]} />
@@ -685,7 +743,7 @@ export function OfficeArchitecture({
 
       {/* Giant Instanced Biophilic Vertical Garden + Working Real-Time Analog Wall Clock */}
       <InstancedVerticalGarden position={[-13.9, 0, -0.4]} />
-      <RealTimeWallClock position={[-13.86, 2.42, 7.65]} />
+      <RealTimeWallClock position={[-13.86, 2.83, 7.65]} />
 
       {/* Double-Height Atrium Stairwell descending visibly to Ground Floor */}
       <AtriumStairwell position={[-11.35, 0, 0.1]} />
@@ -817,32 +875,12 @@ export function OfficeArchitecture({
           />
         </group>
 
-        {/* Integra 40 Años Heritage Display Totem */}
-        <group position={[-13.0, 0, 2.2]} rotation={[0, 0.4, 0]}>
-          <mesh position={[0, 0.05, 0]} castShadow>
-            <boxGeometry args={[0.84, 0.1, 0.48]} />
-            <meshStandardMaterial color="#0B2A5B" roughness={0.45} />
-          </mesh>
-          <mesh position={[0, 1.12, 0]} castShadow>
-            <boxGeometry args={[0.8, 2.04, 0.12]} />
-            <meshStandardMaterial color="#182736" roughness={0.4} metalness={0.35} />
-          </mesh>
-          <mesh position={[0, 1.15, 0.068]}>
-            <planeGeometry args={[0.72, 1.72]} />
-            <meshStandardMaterial
-              map={heritageTotemTex.texture}
-              emissive="#FFFFFF"
-              emissiveMap={heritageTotemTex.texture}
-              emissiveIntensity={screenGlow * 0.9}
-              roughness={0.25}
-            />
-          </mesh>
-        </group>
+        <HeritageRelief plaque={heritagePlaqueTex.texture} />
 
         {/* 1986 Retro PC Heritage Plinth */}
         <group
           position={[-12.85, 0, 6.45]}
-          rotation={[0, 0.48, 0]}
+          rotation={[0, 0.9, 0]}
           onClick={(e) => {
             e.stopPropagation();
             onInteractLandmark('retro_pc');
@@ -889,7 +927,7 @@ export function OfficeArchitecture({
           />
           {hoveredLandmark === 'retro_pc' && (
             <Html position={[0, 1.55, 0]} center zIndexRange={[10, 0]}>
-              <div className="landmark-tooltip">Easter Egg · PC 1986 Calatayud (Click)</div>
+              <div className="landmark-tooltip">La historia de Integra</div>
             </Html>
           )}
         </group>
@@ -1126,8 +1164,13 @@ export function OfficeArchitecture({
         }}
         onPointerOut={() => setPointer(null)}
       >
+        <mesh position={[3.6, 0.006, -5.8]} receiveShadow>
+          <boxGeometry args={[6.4, 0.012, 7.2]} />
+          <meshStandardMaterial color="#DCE6E3" roughness={0.92} />
+        </mesh>
+
         {/* East glass partition */}
-        <group position={[7.0, 0, -5.9]}>
+        {!focusAcademy && <group position={[7.0, 0, -5.9]}>
           <mesh position={[0, 1.56, 0]}>
             <boxGeometry args={[0.06, 3.08, 7.8]} />
             <meshPhysicalMaterial color="#B8D4DD" transparent opacity={0.24} roughness={0.12} />
@@ -1136,22 +1179,22 @@ export function OfficeArchitecture({
             <boxGeometry args={[0.09, 0.08, 7.9]} />
             <meshStandardMaterial color="#344452" roughness={0.4} metalness={0.45} />
           </mesh>
-        </group>
+        </group>}
 
         {/* Front glass panels flanking doorway at X = +3.6 */}
-        {[1.4, 5.8].map((fx) => (
+        {!focusAcademy && [1.4, 5.8].map((fx) => (
           <mesh key={fx} position={[fx, 1.56, -2.0]}>
             <boxGeometry args={[2.3, 3.08, 0.06]} />
             <meshPhysicalMaterial color="#B8D4DD" transparent opacity={0.22} roughness={0.12} />
           </mesh>
         ))}
-        <mesh position={[3.6, 3.12, -2.0]}>
+        {!focusAcademy && <mesh position={[3.6, 3.12, -2.0]}>
           <boxGeometry args={[6.9, 0.1, 0.1]} />
           <meshStandardMaterial color="#344452" roughness={0.4} metalness={0.45} />
-        </mesh>
+        </mesh>}
 
         {/* Glowing Academia Integra Header Sign (lights green when includesTraining=YES!) */}
-        <group position={[3.6, 2.84, -1.94]}>
+        {!focusAcademy && <group position={[3.6, 2.84, -1.94]}>
           <mesh castShadow>
             <boxGeometry args={[2.1, 0.34, 0.08]} />
             <meshStandardMaterial color="#0B2A5B" roughness={0.4} />
@@ -1170,7 +1213,7 @@ export function OfficeArchitecture({
               ACADEMIA INTEGRA
             </div>
           </Html>
-        </group>
+        </group>}
 
         {/* Instructor Screen on North Wall */}
         <group position={[3.6, 1.72, -9.55]}>
@@ -1188,32 +1231,17 @@ export function OfficeArchitecture({
         </group>
 
         {/* 2 Classroom Training Rows + Laptops + Modern Chairs */}
-        {[-6.2, -4.3].map((rz) => (
-          <group key={rz} position={[3.6, 0, rz]}>
+        {ACADEMY_SEATS.map(({ x, z }) => (
+          <group key={`${x}-${z}`} position={[x, 0, z]}>
             <KenneyModel
               name="desk"
-              position={[-1.0, 0, 0]}
+              position={[0, 0, -0.72]}
               scale={[2.25, 1.98, 1.25]}
               palette={{ wood: { color: '#F8FAFA' }, metal: { color: '#586B7A' } }}
             />
-            <KenneyModel
-              name="desk"
-              position={[1.0, 0, 0]}
-              scale={[2.25, 1.98, 1.25]}
-              palette={{ wood: { color: '#F8FAFA' }, metal: { color: '#586B7A' } }}
-            />
-            <KenneyModel name="laptop" position={[-1.0, 0.77, -0.05]} scale={0.62} />
-            <KenneyModel name="laptop" position={[1.0, 0.77, -0.05]} scale={0.62} />
+            <KenneyModel name="laptop" position={[0, 0.77, -0.77]} scale={0.62} />
             <KenneyModel
               name="chairModernFrameCushion"
-              position={[-1.0, 0, 0.72]}
-              rotation={[0, Math.PI, 0]}
-              scale={[2.1, 1.95, 2.1]}
-              palette={{ carpetBlue: { color: '#2F6657' } }}
-            />
-            <KenneyModel
-              name="chairModernFrameCushion"
-              position={[1.0, 0, 0.72]}
               rotation={[0, Math.PI, 0]}
               scale={[2.1, 1.95, 2.1]}
               palette={{ carpetBlue: { color: '#2F6657' } }}
@@ -1221,9 +1249,9 @@ export function OfficeArchitecture({
           </group>
         ))}
 
-        {hoveredLandmark === 'academy' && (
+        {!focusAcademy && hoveredLandmark === 'academy' && (
           <Html position={[3.6, 2.2, -5.2]} center zIndexRange={[10, 0]}>
-            <div className="landmark-tooltip">Academia Integra · Aula Formación (Click)</div>
+            <div className="landmark-tooltip">Entrar en el aula</div>
           </Html>
         )}
       </group>
@@ -1249,6 +1277,29 @@ export function OfficeArchitecture({
           scale={2.1}
           palette={{ metalLight: { color: '#E4ECEF' }, metalDark: { color: '#0B2A5B' } }}
         />
+        <RoundedBox args={[2.06, 0.065, 1.03]} radius={0.028} smoothness={2} position={[9.675, 0.987, -9.14]} castShadow receiveShadow>
+          <meshStandardMaterial color="#BA9568" roughness={0.68} />
+        </RoundedBox>
+        {[9.14, 10.22].map((x) => (
+          <group key={x} position={[x, 0, -9.17]}>
+            <mesh position={[0, 3.5, -0.33]}>
+              <boxGeometry args={[0.035, 0.035, 0.9]} />
+              <meshStandardMaterial color="#38454B" metalness={0.45} roughness={0.5} />
+            </mesh>
+            <mesh position={[0, 3.08, 0.11]}>
+              <cylinderGeometry args={[0.012, 0.012, 0.84, 8]} />
+              <meshStandardMaterial color="#38454B" />
+            </mesh>
+            <mesh position={[0, 2.59, 0.11]} castShadow>
+              <cylinderGeometry args={[0.086, 0.2, 0.15, 24]} />
+              <meshStandardMaterial color="#376B61" roughness={0.38} />
+            </mesh>
+            <mesh position={[0, 2.512, 0.11]}>
+              <cylinderGeometry args={[0.169, 0.169, 0.012, 24]} />
+              <meshStandardMaterial color="#FFEDD4" emissive="#FFC786" emissiveIntensity={lampEmissiveIntensity} />
+            </mesh>
+          </group>
+        ))}
 
         {/* Water Cooler Dispenser beside the bar */}
         <group position={[8.1, 0, -9.1]}>
@@ -1276,7 +1327,7 @@ export function OfficeArchitecture({
         >
           <KenneyModel
             name="kitchenCoffeeMachine"
-            position={[10.35, 0.96, -9.1]}
+            position={[10.35, 1.02, -9.1]}
             scale={1.9}
             palette={{
               metalMedium: { color: '#1F2C38', roughness: 0.35, metalness: 0.55 },
@@ -1286,12 +1337,12 @@ export function OfficeArchitecture({
           />
           {hoveredLandmark === 'coffee' && (
             <Html position={[10.35, 1.9, -9.1]} center zIndexRange={[10, 0]}>
-              <div className="landmark-tooltip">Click: preparar café / pausa IntegraTalks</div>
+              <div className="landmark-tooltip">Pausa café</div>
             </Html>
           )}
         </group>
         <CoffeeSteamCluster
-          active={scene.coffeeBrewing || coffeeActiveOverride}
+          guestPresent={coffeeGuestPresent}
           reducedMotion={reducedMotion}
         />
 
@@ -1306,20 +1357,39 @@ export function OfficeArchitecture({
           }}
         />
         <KenneyModel
-          name="loungeDesignSofaCorner"
-          position={[11.65, 0, -5.25]}
-          rotation={[0, -Math.PI / 2, 0]}
-          scale={2.05}
+          name="loungeDesignSofa"
+          position={[LOUNGE_SOFA.x, 0, LOUNGE_SOFA.z]}
+          rotation={[0, LOUNGE_SOFA.yaw, 0]}
+          scale={LOUNGE_SOFA.scale}
           palette={{ carpetBlue: { color: '#1B4973', roughness: 0.85 } }}
         />
         <KenneyModel
           name="loungeDesignChair"
-          position={[8.75, 0, -4.35]}
-          rotation={[0, Math.PI / 2.2, 0]}
-          scale={1.95}
+          position={[LOUNGE_CHAIR.x, 0, LOUNGE_CHAIR.z]}
+          rotation={[0, LOUNGE_CHAIR.yaw, 0]}
+          scale={LOUNGE_CHAIR.scale}
           palette={{ carpetBlue: { color: '#2F6657', roughness: 0.85 } }}
         />
-        <KenneyModel name="tableCoffeeGlass" position={[10.1, 0, -4.65]} scale={2.05} />
+        <group position={[10.03, 0, -4.63]}>
+          <mesh position={[0, 0.2, 0]} castShadow>
+            <cylinderGeometry args={[0.15, 0.25, 0.4, 20]} />
+            <meshStandardMaterial color="#315451" roughness={0.65} />
+          </mesh>
+          <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.51, 0.49, 0.055, 36]} />
+            <meshStandardMaterial color="#B88F62" roughness={0.7} />
+          </mesh>
+          <group position={[0.14, 0.45, -0.08]} rotation={[0, 0.26, 0]}>
+            <mesh position={[0, 0.015, 0]}>
+              <boxGeometry args={[0.24, 0.029, 0.31]} />
+              <meshStandardMaterial color="#EEE5D4" roughness={0.95} />
+            </mesh>
+            <mesh position={[0, 0.032, 0]}>
+              <boxGeometry args={[0.255, 0.01, 0.328]} />
+              <meshStandardMaterial color="#0B2A5B" roughness={0.8} />
+            </mesh>
+          </group>
+        </group>
         <KenneyModel
           name="lampRoundFloor"
           position={[12.8, 0, -8.2]}

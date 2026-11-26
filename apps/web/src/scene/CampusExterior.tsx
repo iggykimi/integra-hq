@@ -247,57 +247,13 @@ function CampusWalker({
   );
 }
 
-function DriftingClouds({ mood, reducedMotion }: { mood: LightingMood; reducedMotion: boolean }) {
-  const c1 = useRef<THREE.Group>(null);
-  const c2 = useRef<THREE.Group>(null);
-  const c3 = useRef<THREE.Group>(null);
-
-  useFrame(({ clock }) => {
-    if (reducedMotion) return;
-    const t = clock.getElapsedTime();
-    if (c1.current) c1.current.position.x = -36 + ((t * 0.45 + 10) % 76);
-    if (c2.current) c2.current.position.x = -36 + ((t * 0.32 + 38) % 76);
-    if (c3.current) c3.current.position.x = -36 + ((t * 0.38 + 58) % 76);
-  });
-
-  if (mood === 'night') return null;
-
-  const cloudColor = mood === 'golden' ? '#FFE2C7' : '#FFFFFF';
-  const cloudOpacity = mood === 'golden' ? 0.58 : 0.65;
-
-  return (
-    <group>
-      {[
-        { ref: c1, pos: [-14, 12.5, -26] as [number, number, number], s: 1.35 },
-        { ref: c2, pos: [10, 13.8, -30] as [number, number, number], s: 1.65 },
-        { ref: c3, pos: [-26, 12.0, -14] as [number, number, number], s: 1.15 },
-      ].map((c, idx) => (
-        <group key={idx} ref={c.ref} position={c.pos} scale={c.s}>
-          <mesh position={[0, 0, 0]}>
-            <sphereGeometry args={[1.2, 12, 10]} />
-            <meshStandardMaterial color={cloudColor} transparent opacity={cloudOpacity} roughness={1} />
-          </mesh>
-          <mesh position={[1.1, -0.15, 0.1]}>
-            <sphereGeometry args={[0.88, 12, 10]} />
-            <meshStandardMaterial color={cloudColor} transparent opacity={cloudOpacity} roughness={1} />
-          </mesh>
-          <mesh position={[-1.05, -0.2, -0.1]}>
-            <sphereGeometry args={[0.82, 12, 10]} />
-            <meshStandardMaterial color={cloudColor} transparent opacity={cloudOpacity} roughness={1} />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
 /**
  * Grand Multi-Story DAT Alierta 2029 Campus Surrounding the 28m x 20m Cutaway HQ:
  * - Matching 28m x 20m Ground-Floor Podium + Warm Lobby + Terracotta Louvers + Rooftop Solar Deck
  * - Exterior Entrance Monolith with Real Integra White SVG Logo
  * - EV Charging Parking Lot with 3 Parked CC0 Cars + Glowing Cyan EV Chargers
  * - Sister Architectural Tech Park Pavilions (IDOM aesthetic)
- * - Seamlessly fog-blended 96m x 86m park meadow, avenue, bike lane, cyclist, cruising cars & walkers
+ * - Fog-blended park meadow, avenue, bike lane, cyclist, cruising cars & walkers
  */
 export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
   const [logoWhite, setLogoWhite] = useState<HTMLImageElement | null>(null);
@@ -344,6 +300,12 @@ export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
       { model: 'ext/tree_oak', pos: [-14.0, -3.48, -23.5] as [number, number, number], scale: 3.6, rot: 0.5 },
       { model: 'ext/tree_detailed', pos: [-1.0, -3.48, -24.0] as [number, number, number], scale: 3.6, rot: 1.4 },
       { model: 'ext/tree_default_fall', pos: [14.5, -3.48, -23.5] as [number, number, number], scale: 3.5, rot: 2.2 },
+      { model: 'ext/tree_tall', pos: [-21.6, -3.48, 17.2] as [number, number, number], scale: 3.7, rot: 0.2 },
+      { model: 'ext/tree_tall', pos: [-19.1, -3.48, 18.7] as [number, number, number], scale: 3.2, rot: 1.3 },
+      { model: 'ext/tree_oak', pos: [-22.9, -3.48, 20.4] as [number, number, number], scale: 3.4, rot: 2.3 },
+      { model: 'ext/tree_tall', pos: [16.7, -3.48, 18] as [number, number, number], scale: 3.4, rot: 0.5 },
+      { model: 'ext/tree_tall', pos: [20.1, -3.48, 20.7] as [number, number, number], scale: 3.7, rot: 1.8 },
+      { model: 'ext/tree_detailed', pos: [21.8, -3.48, 16.8] as [number, number, number], scale: 3.3, rot: 0.8 },
     ],
     []
   );
@@ -456,11 +418,10 @@ export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
         </group>
       </group>
 
-      {/* ==================== EXPANSIVE SEAMLESS DAT ALIERTA CAMPUS GROUNDS (104m x 96m) ==================== */}
+      {/* The meadow extends past the fog range, including when the camera orbits. */}
       <group>
-        {/* Broad park meadow softly dissolving into scene fog */}
-        <mesh position={[0, -3.65, -4.0]} receiveShadow>
-          <boxGeometry args={[112, 0.34, 104]} />
+        <mesh position={[0, -3.48, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[560, 560]} />
           <meshStandardMaterial color={grassTint} roughness={0.96} />
         </mesh>
 
@@ -545,17 +506,17 @@ export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
 
         {/* Paved Bike & Pedestrian Promenade along North side */}
         <mesh position={[0, -3.46, -13.9]} receiveShadow>
-          <boxGeometry args={[92, 0.04, 2.8]} />
+          <boxGeometry args={[300, 0.04, 2.8]} />
           <meshStandardMaterial color={mood === 'night' ? '#495562' : '#D2D7D5'} roughness={0.86} />
         </mesh>
         <mesh position={[0, -3.435, -13.9]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[92, 1.0]} />
+          <planeGeometry args={[300, 1.0]} />
           <meshStandardMaterial color={mood === 'night' ? '#255360' : '#65A4AC'} roughness={0.88} />
         </mesh>
 
         {/* 2-Lane DAT Alierta Campus Avenue (Z = -18.8) */}
         <mesh position={[0, -3.46, -18.8]} receiveShadow>
-          <boxGeometry args={[108, 0.04, 5.8]} />
+          <boxGeometry args={[300, 0.04, 5.8]} />
           <meshStandardMaterial color={roadColor} roughness={0.9} />
         </mesh>
         {Array.from({ length: 24 }, (_, i) => -44 + i * 3.8).map((rx) => (
@@ -567,7 +528,7 @@ export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
 
         {/* South Pedestrian Promenade */}
         <mesh position={[0, -3.46, 12.8]} receiveShadow>
-          <boxGeometry args={[80, 0.04, 2.4]} />
+          <boxGeometry args={[300, 0.04, 2.4]} />
           <meshStandardMaterial color={mood === 'night' ? '#495562' : '#D7DCD9'} roughness={0.88} />
         </mesh>
 
@@ -711,8 +672,6 @@ export function CampusExterior({ mood, reducedMotion }: CampusExteriorProps) {
         coatColor="#B78770"
         reducedMotion={reducedMotion}
       />
-
-      <DriftingClouds mood={mood} reducedMotion={reducedMotion} />
     </group>
   );
 }

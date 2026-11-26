@@ -197,24 +197,24 @@ export const CAMERA_PRESETS: CameraPreset[] = [
     label: 'Sede Completa · 28×20 m',
     shortLabel: 'Oficina',
     position: [31, 25, 31],
-    target: [0.6, 0.2, 0.1],
-    zoom: 38,
+    target: [0.6, -0.6, -0.2],
+    zoom: 36,
   },
   {
     id: 'campus',
     label: 'Campus DAT Alierta · Panorámica',
     shortLabel: 'Campus',
     position: [40, 29, 40],
-    target: [0.8, -1.2, -2.4],
-    zoom: 24,
+    target: [0.3, -0.9, -7],
+    zoom: 20.5,
   },
   {
     id: 'reception',
     label: 'Recepción & Auditorio IntegraTalks',
     shortLabel: 'Recepción',
-    position: [4.5, 11.5, 19.5],
-    target: [-10.6, 0.7, 5.4],
-    zoom: 76,
+    position: [4.1, 8.8, 14.9],
+    target: [-11.7, 1.15, 5.45],
+    zoom: 90,
   },
   {
     id: 'director',
@@ -236,9 +236,9 @@ export const CAMERA_PRESETS: CameraPreset[] = [
     id: 'academy',
     label: 'Academia Integra · Formación',
     shortLabel: 'Formación',
-    position: [16.5, 11.5, 8.2],
-    target: [3.6, 0.85, -5.8],
-    zoom: 78,
+    position: [11.9, 6.55, 5.2],
+    target: [3.6, 1.03, -5.35],
+    zoom: 92,
   },
   {
     id: 'commercial',
@@ -276,9 +276,9 @@ export const CAMERA_PRESETS: CameraPreset[] = [
     id: 'cafe',
     label: 'Rincón Café · Lounge',
     shortLabel: 'Café',
-    position: [23.5, 11.5, 7.8],
-    target: [10.5, 0.85, -5.6],
-    zoom: 78,
+    position: [6.8, 6.3, 5.5],
+    target: [10.55, 0.95, -6.15],
+    zoom: 104,
   },
   {
     id: 'terrace',
@@ -301,9 +301,20 @@ export const BOARDROOM_SEATS: Array<{ pos: Vec2; yaw: number }> = [
   { pos: { x: -1.95, z: -5.8 }, yaw: Math.PI / 2 },  // East head of table (faces -X)
 ];
 
+export const ACADEMY_SEATS: Vec2[] = [
+  { x: 2.6, z: -3.58 },
+  { x: 4.6, z: -3.58 },
+  { x: 2.6, z: -5.48 },
+  { x: 4.6, z: -5.48 },
+];
+
+export const LOUNGE_SOFA = { x: 11.44, z: -4.5, yaw: -Math.PI / 2, scale: 2.05 };
+export const LOUNGE_CHAIR = { x: 8.75, z: -4.5, yaw: Math.PI / 2, scale: 1.95 };
+export const DESK_SEAT_HEIGHT = 0.465;
+
 export const LANDMARK_WAYPOINTS: Record<
   Exclude<AgentActivity, 'desk' | 'boardroom'>,
-  { pos: Vec2; yaw: number; entry?: Vec2; seated?: boolean }
+  { pos: Vec2; yaw: number; entry?: Vec2; approach?: Vec2; seatHeight?: number }
 > = {
   whiteboard: {
     pos: { x: -12.15, z: -5.5 },
@@ -316,27 +327,30 @@ export const LANDMARK_WAYPOINTS: Record<
     entry: { x: -8.6, z: 0.4 },
   },
   academy: {
-    pos: { x: 3.6, z: -5.2 },
-    yaw: 0, // sits facing instructor screen (-Z)
+    pos: ACADEMY_SEATS[0],
+    yaw: 0,
     entry: { x: 3.6, z: -1.5 },
-    seated: true,
+    approach: { x: 3.6, z: ACADEMY_SEATS[0].z },
+    seatHeight: 0.48,
   },
   coffee: {
-    pos: { x: 10.35, z: -7.7 },
+    pos: { x: 10.35, z: -8.12 },
     yaw: 0, // faces espresso bar (-Z)
     entry: { x: 9.8, z: -1.4 },
   },
   lounge_sofa: {
-    pos: { x: 11.15, z: -4.75 },
-    yaw: Math.PI / 2, // sits comfortably on the L-sofa facing coffee table!
+    pos: { x: LOUNGE_SOFA.x - 0.09, z: LOUNGE_SOFA.z },
+    yaw: LOUNGE_SOFA.yaw + Math.PI,
     entry: { x: 9.8, z: -1.4 },
-    seated: true,
+    approach: { x: 10.76, z: LOUNGE_SOFA.z },
+    seatHeight: 0.23 * LOUNGE_SOFA.scale,
   },
   lounge_chair: {
-    pos: { x: 8.95, z: -4.35 },
-    yaw: -Math.PI / 2.2, // sits on lounge armchair facing sofa buddy!
+    pos: { x: LOUNGE_CHAIR.x + 0.09, z: LOUNGE_CHAIR.z },
+    yaw: LOUNGE_CHAIR.yaw - Math.PI,
     entry: { x: 9.8, z: -1.4 },
-    seated: true,
+    approach: { x: 9.45, z: LOUNGE_CHAIR.z },
+    seatHeight: 0.23 * LOUNGE_CHAIR.scale,
   },
   terrace: {
     pos: { x: 15.8, z: -5.0 },
@@ -349,10 +363,11 @@ export const LANDMARK_WAYPOINTS: Record<
     entry: { x: -2.9, z: 3.45 },
   },
   auditorium: {
-    pos: { x: -10.5, z: 8.15 },
-    yaw: 0, // sits on the oak IntegraTalks bleachers facing -Z!
+    pos: { x: -10.5, z: 7.98 },
+    yaw: 0,
     entry: { x: -8.4, z: 6.4 },
-    seated: true,
+    approach: { x: -10.5, z: 7.48 },
+    seatHeight: 0.43,
   },
   printer: {
     pos: { x: -2.65, z: 7.2 },
@@ -370,8 +385,8 @@ export const LANDMARK_WAYPOINTS: Record<
     entry: { x: 7.7, z: 0.4 },
   },
   retro_pc: {
-    pos: { x: -11.6, z: 6.25 },
-    yaw: Math.PI / 2.5,
+    pos: { x: -11.6, z: 6.95 },
+    yaw: Math.PI / 2.6,
     entry: { x: -8.6, z: 6.25 },
   },
   garden_chat: {
@@ -758,7 +773,7 @@ export function buildAgentRoute(
   profile: AgentVisualProfile,
   from: Vec2,
   activity: AgentActivity
-): { waypoints: Vec2[]; finalYaw: number; seatedAtEnd: boolean } {
+): { waypoints: Vec2[]; finalYaw: number; seatHeight?: number } {
   // Slight personal lane offset in corridor so agents passing each other don't collide head-on
   const laneOffset = ((profile.boardroomSeatIndex % 3) - 1) * 0.45;
   const corridorZ = 0.25 + laneOffset;
@@ -802,12 +817,12 @@ export function buildAgentRoute(
   if (activity === 'desk') {
     const distToSeat = Math.hypot(from.x - profile.seatPos.x, from.z - profile.seatPos.z);
     if (distToSeat < 0.25) {
-      return { waypoints: [profile.seatPos], finalYaw: profile.deskYaw, seatedAtEnd: true };
+      return { waypoints: [profile.seatPos], finalYaw: profile.deskYaw, seatHeight: DESK_SEAT_HEIGHT };
     }
     const pts: Vec2[] = [];
     leaveCurrentRoom(pts);
     pts.push({ x: Math.max(-8.8, from.x), z: corridorZ }, { x: profile.corridorX, z: corridorZ }, profile.exitPos, profile.seatPos);
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: profile.deskYaw, seatedAtEnd: true };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: profile.deskYaw, seatHeight: DESK_SEAT_HEIGHT };
   }
 
   const pts: Vec2[] = [];
@@ -821,7 +836,7 @@ export function buildAgentRoute(
       { x: -3.7, z: -2.5 },
       seat.pos
     );
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: seat.yaw, seatedAtEnd: true };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: seat.yaw, seatHeight: 0.49 };
   }
 
   const target = LANDMARK_WAYPOINTS[activity];
@@ -829,15 +844,15 @@ export function buildAgentRoute(
   // Fast direct in-zone shortcuts
   if (profile.id === 'director' && activity === 'whiteboard' && from.z < -1.8 && from.x < -7.2) {
     pts.push({ x: -10.8, z: -4.8 }, target.pos);
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw };
   }
   if ((profile.id === 'offers' || profile.id === 'crm') && activity === 'printer' && from.z > 1.8 && from.x < -1.0) {
     pts.push({ x: -3.15, z: 7.2 }, target.pos);
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw };
   }
   if ((profile.id === 'architect' || profile.id === 'consultant') && activity === 'arch_board' && from.z > 1.8 && from.x > -0.8 && from.x < 6.8) {
     pts.push({ x: 3.35, z: 6.1 }, target.pos);
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw };
   }
 
   // Terrace goes smoothly through the Café entrance -> glass terrace door -> outdoor deck
@@ -849,7 +864,7 @@ export function buildAgentRoute(
       { x: 12.6, z: -5.0 },
       target.pos
     );
-    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw, seatedAtEnd: false };
+    return { waypoints: dedupeWaypoints(pts, from), finalYaw: target.yaw };
   }
 
   pts.push({ x: Math.max(-8.8, from.x), z: corridorZ });
@@ -858,11 +873,12 @@ export function buildAgentRoute(
   } else {
     pts.push({ x: target.pos.x, z: corridorZ });
   }
+  if (target.approach) pts.push(target.approach);
   pts.push(target.pos);
   return {
     waypoints: dedupeWaypoints(pts, from),
     finalYaw: target.yaw,
-    seatedAtEnd: Boolean(target.seated),
+    seatHeight: target.seatHeight,
   };
 }
 

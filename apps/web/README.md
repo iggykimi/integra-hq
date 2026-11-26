@@ -33,7 +33,7 @@ npm run typecheck  # solo TypeScript
 | Zona | Contenido |
 |---|---|
 | Dirección | Puesto de Elena, pizarra DAG, acceso a Sala Alierta |
-| Recepción / atrio | Escalera a doble altura, pared corporativa azul con logo Integra, reloj analógico 3D en hora real, PC 1986 |
+| Recepción / atrio | Escalera a doble altura, logo Integra, reloj analógico 3D y PC de 1986 junto al relieve «Calatayud, 1986» |
 | Sala Alierta | Mesa de consejo para 8 plazas y pantalla de checkpoint |
 | Academia Integra | Aula reactiva a `includesTraining` (con/sin formación) |
 | Grada IntegraTalks | Graderío de roble para charlas y pausas |
@@ -41,7 +41,7 @@ npm run typecheck  # solo TypeScript
 | Soluciones · Data & AI | Pizarra Fabric, puestos y Server Lab acristalado con 3 racks |
 | Comunicación | Estudio de presentaciones y pantalla de diapositivas |
 | Operación | Proyectos, facturación y bandejas de documentación |
-| Rincón Café & Lounge | Barra de espresso, sofá, sillón y terraza conectada |
+| Rincón Café & Lounge | Barra de espresso con lámparas, sofá y sillón con poses ajustadas al cojín, y terraza conectada |
 | Terraza Exterior | Voladizo con pérgola cerámica, mesas y vistas al campus |
 | Campus | 4 pabellones tecnológicos, monolito DAT Alierta · INTEGRA, aparcamiento con 4 cargas EV y 3 coches CC0, lámina de agua, carril bici, ciclista, peatones, tráfico y niebla |
 
@@ -76,7 +76,7 @@ Elementos repetidos con `InstancedMesh`: **180 celosías cerámicas** y **112 m�
 ## Rendimiento
 
 - Sombras de contacto **bakeadas en 1 frame** (`ContactShadows frames={1}`).
-- Sombra direccional de 2048² y `dpr={[1, 2]}`.
+- Sombra direccional de 2048², `dpr={[1, 2]}` y antialiasing de 2 muestras en el posprocesado.
 - Bloom con `luminanceThreshold={1.08}` para no inundar la escena.
 - Instancing para celosías y jardín vertical.
 - Medición declarada en Chrome headless 1920×1080: **97–218 FPS** según vista, 0 errores de consola. Es una medición del prototipo, no una garantía en todos los equipos.
@@ -93,7 +93,7 @@ Elementos repetidos con `InstancedMesh`: **180 celosías cerámicas** y **112 m�
 
 Los modelos de mobiliario, naturaleza, coches y ciudad son **Kenney CC0**; el HDRI es **Poly Haven CC0**; el logo es el SVG oficial de `08_RECURSOS/brand/`. El detalle de origen, versión y modificaciones está en `08_RECURSOS/ASSETS.md`. No hay assets de pago ni fan art.
 
-Los personajes son ficticios y de geometría propia. La [presentación pública del DAT Alierta](https://www.integratecnologia.es/noticias/integra-primera-empresa-privada-en-incorporarse-al-dat-alierta) orienta la luz natural y los espacios de trabajo y formación. [My Room in 3D](https://github.com/brunosimon/my-room-in-3d) se consultó como referencia de contraste entre materiales y luz ambiente; no se importaron sus archivos.
+Los personajes son ficticios y de geometría propia. La [presentación pública del DAT Alierta](https://www.integratecnologia.es/noticias/integra-primera-empresa-privada-en-incorporarse-al-dat-alierta) orienta la luz natural y los espacios de trabajo y formación. El relieve de recepción es una geometría original inspirada en la [cerámica mudéjar aragonesa](https://whc.unesco.org/en/list/378/) y en el [origen de Integra en Calatayud](https://www.integratecnologia.es/noticias/integra-celebra-40-anos-de-historia-mirando-al-futuro-desde-aragon). [My Room in 3D](https://github.com/brunosimon/my-room-in-3d) se consultó como referencia de contraste entre materiales y luz ambiente; no se importaron sus archivos.
 
 ## Limitaciones conocidas
 

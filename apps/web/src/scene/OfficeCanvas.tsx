@@ -15,6 +15,7 @@ import {
   AGENT_ORDER,
   AGENT_PROFILES,
   CAMERA_PRESETS,
+  LANDMARK_WAYPOINTS,
   type CameraPresetId,
   type LightingMood,
   type Vec2,
@@ -146,13 +147,16 @@ function CameraRig({
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { camera, size } = useThree();
   // The whole floor needs more room than a close-up, especially beside the inspector.
-  const wideScale = Math.min(1, size.width / 1440, size.height / 920);
+  const wideScale = Math.min(1, size.width / 1520, size.height / 920);
   const detailScale = Math.min(1, size.width / 1200, size.height / 900);
   const zoomScale = presetId === 'overview' || presetId === 'campus' ? wideScale : detailScale;
   const animatingRef = useRef(false);
   const goalPos = useRef(new THREE.Vector3(31, 25, 31));
   const goalTarget = useRef(new THREE.Vector3(0.6, 0.2, 0.1));
   const goalZoom = useRef(38);
+  const orbitOffset = useRef(new THREE.Vector3());
+  const currentOrbit = useRef(new THREE.Spherical());
+  const goalOrbit = useRef(new THREE.Spherical());
 
   useEffect(() => {
     const preset = CAMERA_PRESETS.find((p) => p.id === presetId) ?? CAMERA_PRESETS[0];
@@ -166,7 +170,7 @@ function CameraRig({
     const controls = controlsRef.current;
     if (!controls) return;
     const ortho = camera as THREE.OrthographicCamera;
-    const alpha = reducedMotion ? 1 : Math.min(1, delta * 5.2);
+    const alpha = reducedMotion ? 1 : 1 - Math.exp(-delta * 5.2);
 
     if (followSelected && selectedAgent) {
       const pos = agentPositionsRef.current[selectedAgent] ?? AGENT_PROFILES[selectedAgent].seatPos;
@@ -177,8 +181,16 @@ function CameraRig({
     }
 
     if (animatingRef.current) {
-      ortho.position.lerp(goalPos.current, alpha);
+      const offset = orbitOffset.current;
+      const orbit = currentOrbit.current.setFromVector3(offset.subVectors(ortho.position, controls.target));
+      const goal = goalOrbit.current.setFromVector3(offset.subVectors(goalPos.current, goalTarget.current));
+      const turn = goal.theta - orbit.theta;
+      // Orbit around the focus even when resetting from the opposite side of the office.
+      orbit.theta += Math.atan2(Math.sin(turn), Math.cos(turn)) * alpha;
+      orbit.phi = THREE.MathUtils.lerp(orbit.phi, goal.phi, alpha);
+      orbit.radius = THREE.MathUtils.lerp(orbit.radius, goal.radius, alpha);
       controls.target.lerp(goalTarget.current, alpha);
+      ortho.position.copy(offset.setFromSpherical(orbit).add(controls.target));
       ortho.zoom = THREE.MathUtils.lerp(ortho.zoom, goalZoom.current, alpha);
       ortho.updateProjectionMatrix();
       controls.update();
@@ -201,7 +213,7 @@ function CameraRig({
       dampingFactor={0.08}
       minZoom={18 * wideScale}
       maxZoom={165}
-      maxPolarAngle={Math.PI / 2.12}
+      maxPolarAngle={Math.PI * 0.41}
       minPolarAngle={Math.PI / 7}
       onStart={() => {
         animatingRef.current = false;
@@ -230,9 +242,14 @@ export function OfficeCanvas({
   const agentPositionsRef = useRef<Partial<Record<AgentId, Vec2>>>({});
   const [pulsePositions, setPulsePositions] = useState<Partial<Record<AgentId, Vec2>>>({});
 
-  const ambientCoffeeActive = Object.values(ambientMap).some(
-    (v) => v?.activity === 'coffee' || v?.activity === 'lounge_sofa' || v?.activity === 'lounge_chair'
+  const coffeeVisitors = AGENT_ORDER.filter(
+    (id) => scene.agents[id].activity === 'coffee' || ambientMap[id]?.activity === 'coffee'
   );
+  const coffeeCounter = LANDMARK_WAYPOINTS.coffee.pos;
+  const coffeeGuestPresent = () => coffeeVisitors.some((id) => {
+    const pos = agentPositionsRef.current[id];
+    return pos && Math.hypot(pos.x - coffeeCounter.x, pos.z - coffeeCounter.z) < 0.3;
+  });
   const isWideView = !followSelected && (cameraPreset === 'overview' || cameraPreset === 'campus');
 
   const handlePositionReport = useCallback((id: AgentId, pos: Vec2) => {
@@ -256,7 +273,7 @@ export function OfficeCanvas({
         onPointerMissed={() => onSelectAgent(null)}
       >
         <color attach="background" args={[light.bg]} />
-        <fog attach="fog" args={[light.bg, 95, 168]} />
+        <fog attach="fog" args={[light.bg, 78, 156]} />
 
         <OrthographicCamera
           makeDefault
@@ -308,8 +325,8 @@ export function OfficeCanvas({
           <OfficeArchitecture
             scene={scene}
             mood={mood}
-            focusBoardroom={cameraPreset === 'boardroom' && !followSelected}
-            coffeeActiveOverride={ambientCoffeeActive}
+            focusedView={followSelected ? null : cameraPreset}
+            coffeeGuestPresent={coffeeGuestPresent}
             reducedMotion={reducedMotion}
             onInteractLandmark={onInteractLandmark}
           />
@@ -365,7 +382,7 @@ export function OfficeCanvas({
           reducedMotion={reducedMotion}
         />
 
-        <EffectComposer multisampling={0}>
+        <EffectComposer multisampling={2}>
           <Bloom
             mipmapBlur
             luminanceThreshold={1.08}

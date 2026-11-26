@@ -19,6 +19,7 @@ import {
   type AgentActivity,
   type AgentVisualProfile,
   buildAgentRoute,
+  DESK_SEAT_HEIGHT,
   type HairStyle,
   STATE_META,
   type Vec2,
@@ -237,6 +238,9 @@ export function SpecialistAgent({
   const leftForearmRef = useRef<THREE.Group>(null);
   const rightForearmRef = useRef<THREE.Group>(null);
   const alertPropRef = useRef<THREE.Mesh>(null);
+  const mugRef = useRef<THREE.Group>(null);
+  const mugAngles = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+  const mugWorldRotation = useRef(new THREE.Quaternion());
 
   // Effective activity merges real workflow state (always primary!) with idle ambient sim
   const isAmbientActive =
@@ -252,7 +256,7 @@ export function SpecialistAgent({
   const routeRef = useRef<Vec2[]>([]);
   const routeIdxRef = useRef<number>(0);
   const finalYawRef = useRef<number>(profile.deskYaw);
-  const seatedAtEndRef = useRef<boolean>(true);
+  const seatHeightRef = useRef<number | undefined>(DESK_SEAT_HEIGHT);
   const lastActivityRef = useRef<AgentActivity>('desk');
   const strideDistanceRef = useRef(0);
   const [isWalking, setIsWalking] = useState(false);
@@ -272,7 +276,7 @@ export function SpecialistAgent({
     routeRef.current = plan.waypoints;
     routeIdxRef.current = 0;
     finalYawRef.current = plan.finalYaw;
-    seatedAtEndRef.current = plan.seatedAtEnd;
+    seatHeightRef.current = plan.seatHeight;
 
     if (reducedMotion && root && plan.waypoints.length > 0) {
       const dest = plan.waypoints[plan.waypoints.length - 1];
@@ -291,8 +295,8 @@ export function SpecialistAgent({
     if (!root) return;
 
     const t = reducedMotion ? 0 : clock.getElapsedTime();
-    const dt = Math.min(delta, 0.05);
-    const lerpRate = reducedMotion ? 1 : Math.min(1, dt * 8.5);
+    const dt = Math.min(delta, 0.12);
+    const lerpRate = reducedMotion ? 1 : 1 - Math.exp(-dt * 8.5);
     const seed = profile.boardroomSeatIndex * 1.37 + profile.deskPos.x * 0.21;
 
     let moving = false;
@@ -328,9 +332,6 @@ export function SpecialistAgent({
       let desiredYaw = finalYawRef.current;
       if (effectiveActivity === 'desk' && agent.state === 'waiting') {
         desiredYaw += 0.35;
-      } else if (poseHint === 'chat' && effectiveActivity === 'coffee') {
-        // Face lounge buddy smoothly!
-        desiredYaw = Math.PI * 0.92;
       }
       root.rotation.y = lerpAngle(root.rotation.y, desiredYaw, lerpRate);
     }
@@ -341,8 +342,15 @@ export function SpecialistAgent({
       onPositionReport?.(profile.id, { x: root.position.x, z: root.position.z });
     }
 
-    const standing = moving || !seatedAtEndRef.current;
+    const seatHeight = moving ? undefined : seatHeightRef.current;
+    const standing = seatHeight === undefined;
     const walkCycle = strideDistanceRef.current / (1.12 * profile.appearance.heightScale) * Math.PI * 2 + seed;
+    const loungeTalk = poseHint === 'chat' && !moving && !reducedMotion &&
+      (t + (effectiveActivity === 'lounge_chair' ? 2.5 : 0)) % 5 < 2.15;
+    const sipPhase = (t + Math.abs(seed)) % 7.4;
+    const sip = effectiveProp === 'coffee' && !moving && !reducedMotion && !loungeTalk
+      ? THREE.MathUtils.smoothstep(sipPhase, 4.65, 5.15) * (1 - THREE.MathUtils.smoothstep(sipPhase, 5.55, 6.2))
+      : 0;
 
     // Natural eye blink every ~3.8s
     if (leftEyeGroupRef.current && rightEyeGroupRef.current) {
@@ -359,23 +367,16 @@ export function SpecialistAgent({
         !moving &&
         ((effectiveActivity === 'boardroom' && agent.state === 'collaborating') ||
           effectiveActivity === 'phone_booth' ||
-          poseHint === 'chat' ||
+          loungeTalk ||
           poseHint === 'call');
       mouthRef.current.scale.y = speaking ? 0.24 + Math.abs(Math.sin(t * 5 + seed)) * 0.2 : 0.24;
     }
 
-    // Pelvis height (seated on chair / lounge cushion / bleachers vs standing + walk stride bounce)
+    // The cushion supports the pelvis; the thigh angle keeps the soles on the floor.
+    const hipHeight = seatHeight === undefined ? 0.72 : seatHeight / profile.appearance.heightScale + 0.09;
     if (hipsRef.current) {
       const bounce = moving && !reducedMotion ? Math.abs(Math.sin(walkCycle)) * 0.04 : 0;
-      const breath = !moving && !reducedMotion ? Math.sin(t * 2.0 + seed) * 0.006 : 0;
-      const seatedY =
-        effectiveActivity === 'auditorium'
-          ? 0.56
-          : effectiveActivity === 'lounge_sofa' || effectiveActivity === 'lounge_chair'
-            ? 0.45
-            : 0.49;
-      const targetY = (standing ? 0.72 : seatedY) + bounce + breath;
-      hipsRef.current.position.y = THREE.MathUtils.lerp(hipsRef.current.position.y, targetY, lerpRate);
+      hipsRef.current.position.y = THREE.MathUtils.lerp(hipsRef.current.position.y, hipHeight + bounce, lerpRate);
     }
 
     // Articulated legs (+X rotation swings thigh FORWARD toward -Z!)
@@ -400,10 +401,11 @@ export function SpecialistAgent({
         leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(leftKneeRef.current.rotation.x, 0, lerpRate);
         rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(rightKneeRef.current.rotation.x, 0, lerpRate);
       } else {
-        leftHipRef.current.rotation.x = THREE.MathUtils.lerp(leftHipRef.current.rotation.x, Math.PI / 2, lerpRate);
-        rightHipRef.current.rotation.x = THREE.MathUtils.lerp(rightHipRef.current.rotation.x, Math.PI / 2, lerpRate);
-        leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(leftKneeRef.current.rotation.x, -Math.PI / 2, lerpRate);
-        rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(rightKneeRef.current.rotation.x, -Math.PI / 2, lerpRate);
+        const thigh = Math.acos(THREE.MathUtils.clamp((hipHeight - 0.356) / 0.32, 0, 1));
+        leftHipRef.current.rotation.x = THREE.MathUtils.lerp(leftHipRef.current.rotation.x, thigh, lerpRate);
+        rightHipRef.current.rotation.x = THREE.MathUtils.lerp(rightHipRef.current.rotation.x, thigh, lerpRate);
+        leftKneeRef.current.rotation.x = THREE.MathUtils.lerp(leftKneeRef.current.rotation.x, -thigh, lerpRate);
+        rightKneeRef.current.rotation.x = THREE.MathUtils.lerp(rightKneeRef.current.rotation.x, -thigh, lerpRate);
       }
     }
 
@@ -433,7 +435,10 @@ export function SpecialistAgent({
         ) {
           hy = Math.sin(t * 1.9 + seed) * 0.24;
           hx = 0.14;
-        } else if (effectiveActivity === 'boardroom' || poseHint === 'chat') {
+        } else if (poseHint === 'chat') {
+          hy = Math.sin(t * 0.8 + seed) * 0.08;
+          hx = Math.sin(t * 2.6 + seed) * (loungeTalk ? 0.055 : 0.025);
+        } else if (effectiveActivity === 'boardroom') {
           hy = Math.sin(t * 1.2 + seed) * 0.3;
           hx = Math.sin(t * 2.4 + seed) * 0.07;
         } else if (effectiveActivity === 'terrace') {
@@ -459,7 +464,7 @@ export function SpecialistAgent({
         }
       }
       headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, hy, lerpRate);
-      headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, hx, lerpRate);
+      headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, hx + sip * 0.08, lerpRate);
     }
 
     // Arms & Forearms (+X rotates FORWARD toward -Z!)
@@ -523,14 +528,13 @@ export function SpecialistAgent({
         leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.72, lerpRate);
         rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.38, lerpRate);
       } else if (effectiveProp === 'coffee') {
-        const sip = reducedMotion ? 0 : Math.max(0, Math.sin(t * 0.95 + seed)) * 0.44;
-        const talkGesture = poseHint === 'chat' && !reducedMotion ? Math.sin(t * 2.8 + seed) * 0.18 : 0;
+        const talkGesture = loungeTalk ? 0.13 * (1 + Math.sin(t * 3.2 + seed)) : 0;
         leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.35 + talkGesture, lerpRate);
-        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.65 + sip, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 0.65 + sip * 0.41, lerpRate);
         leftShoulderRef.current.rotation.z = 0.08;
-        rightShoulderRef.current.rotation.z = -0.06;
+        rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.z, -0.06 - sip * 0.52, lerpRate);
         leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.7 + talkGesture, lerpRate);
-        rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.95 + sip * 0.35, lerpRate);
+        rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.95 + sip * 0.7, lerpRate);
       } else if (effectiveActivity === 'boardroom') {
         const talk = reducedMotion ? 0 : Math.sin(t * 2.6 + seed) * 0.14;
         leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.5 + talk, lerpRate);
@@ -568,6 +572,13 @@ export function SpecialistAgent({
         leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.85, lerpRate);
         rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 0.85 + fidget, lerpRate);
       }
+    }
+
+    if (mugRef.current && rightForearmRef.current) {
+      const mug = mugRef.current;
+      const angles = mugAngles.current.set(sip * 0.22, root.rotation.y, 0);
+      rightForearmRef.current.getWorldQuaternion(mug.quaternion).invert();
+      mug.quaternion.multiply(mugWorldRotation.current.setFromEuler(angles));
     }
 
     if (alertPropRef.current && !reducedMotion) {
@@ -608,9 +619,6 @@ export function SpecialistAgent({
     if (agent.state === 'error' || agent.state === 'waiting') {
       return <WarningCircle size={size} weight="fill" aria-hidden="true" />;
     }
-    if (effectiveActivity === 'coffee' || effectiveProp === 'coffee') {
-      return <Coffee size={size} weight="fill" aria-hidden="true" />;
-    }
     if (effectiveActivity === 'terrace') {
       return <Sun size={size} weight="fill" aria-hidden="true" />;
     }
@@ -619,6 +627,9 @@ export function SpecialistAgent({
     }
     if (effectiveActivity === 'lounge_sofa' || effectiveActivity === 'lounge_chair' || poseHint === 'chat') {
       return <ChatCircleDots size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'coffee' || effectiveProp === 'coffee') {
+      return <Coffee size={size} weight="fill" aria-hidden="true" />;
     }
     if (effectiveActivity === 'academy' || effectiveActivity === 'auditorium') {
       return <BookOpen size={size} weight="fill" aria-hidden="true" />;
@@ -852,14 +863,22 @@ export function SpecialistAgent({
 
               {/* Held Prop: Integra Navy Coffee Cup */}
               {effectiveProp === 'coffee' && (
-                <group position={[0, -0.25, -0.055]} rotation={[Math.PI / 2, 0, 0]}>
+                <group ref={mugRef} position={[-0.035, -0.245, -0.045]}>
                   <mesh castShadow>
-                    <cylinderGeometry args={[0.044, 0.036, 0.105, 12]} />
+                    <cylinderGeometry args={[0.044, 0.036, 0.09, 20]} />
                     <meshStandardMaterial color="#0B2A5B" roughness={0.34} />
                   </mesh>
-                  <mesh position={[0, 0.048, 0]}>
-                    <cylinderGeometry args={[0.038, 0.038, 0.01, 12]} />
+                  <mesh position={[0, 0.046, 0]}>
+                    <cylinderGeometry args={[0.038, 0.038, 0.004, 20]} />
                     <meshStandardMaterial color="#593824" roughness={0.3} />
+                  </mesh>
+                  <mesh position={[0, 0.046, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                    <torusGeometry args={[0.042, 0.004, 6, 20]} />
+                    <meshStandardMaterial color="#EEF2EC" roughness={0.33} />
+                  </mesh>
+                  <mesh position={[0.046, -0.003, 0]}>
+                    <torusGeometry args={[0.022, 0.006, 6, 14]} />
+                    <meshStandardMaterial color="#0B2A5B" roughness={0.34} />
                   </mesh>
                 </group>
               )}
@@ -1050,7 +1069,7 @@ export function SpecialistAgent({
       {/* 3D In-World Speech Bubble / Iconic Badge (cleans wide views; expands on select/hover/zoom) */}
       {showLabel && (showFullBubble ? (
         <Html
-          position={[0, isWalking || !seatedAtEndRef.current ? 2.28 : 2.04, 0]}
+          position={[0, isWalking || seatHeightRef.current === undefined ? 2.28 : 2.04, 0]}
           center
           zIndexRange={[8, 0]}
         >
@@ -1079,7 +1098,7 @@ export function SpecialistAgent({
         </Html>
       ) : showIconPill ? (
         <Html
-          position={[0, isWalking || !seatedAtEndRef.current ? 2.08 : 1.88, 0]}
+          position={[0, isWalking || seatHeightRef.current === undefined ? 2.08 : 1.88, 0]}
           center
           zIndexRange={[6, 0]}
         >

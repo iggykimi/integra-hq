@@ -30,11 +30,7 @@ export function drawReceptionLogoWall(
 ): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
-  // Executive Integra Navy architectural backdrop (crisp contrast under bright daylight!)
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#092B5A');
-  grad.addColorStop(1, '#0F3D73');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = '#0B2A5B';
   ctx.fillRect(0, 0, w, h);
 
   // Architectural cyan corner frame (exact brand-tokens.json headlineFrame rule)
@@ -57,71 +53,21 @@ export function drawReceptionLogoWall(
   ctx.fillStyle = '#43C6F0';
   ctx.font = '700 22px Poppins, Segoe UI, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('INTEGRA HQ · DAT ALIERTA 2029', w / 2, 226);
-
-  ctx.fillStyle = '#D5E8F7';
-  ctx.font = '500 15px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('LA IA COMO CATALIZADOR DE TU CRECIMIENTO · ZARAGOZA', w / 2, 254);
+  ctx.fillText('DAT Alierta · Zaragoza', w / 2, 239);
   ctx.textAlign = 'left';
 }
 
-export function drawHeritageTotem(
-  ctx: CanvasRenderingContext2D,
-  logoWhite: HTMLImageElement | null
-): void {
+export function drawHeritagePlaque(ctx: CanvasRenderingContext2D): void {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
 
-  // Deep Integra navy background with refined brand gradient (matches brand-preview.png)
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#09345D');
-  grad.addColorStop(0.55, '#0B2A5B');
-  grad.addColorStop(1, '#1B1D4E');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = '#E9DFC8';
   ctx.fillRect(0, 0, w, h);
-
-  // Thin crisp frame
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(18, 18, w - 36, h - 36);
-
-  if (logoWhite) {
-    const lw = 165;
-    const lh = lw * (logoWhite.naturalHeight / Math.max(1, logoWhite.naturalWidth));
-    ctx.drawImage(logoWhite, 34, 34, lw, lh);
-  }
-
-  ctx.fillStyle = '#43C6F0';
-  ctx.font = '700 14px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('REAL HACK 2026 · RETO 11', 34, 112);
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '800 32px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('40 AÑOS', 34, 152);
-  ctx.font = '400 17px Poppins, Segoe UI, sans-serif';
-  ctx.fillStyle = '#D7E9F7';
-  ctx.fillText('1986 Calatayud → 2029 DAT Alierta', 34, 178);
-
-  // 2x2 brand KPI tiles (matching brand-preview.png colors)
-  const tiles: Array<[number, number, string, string, string]> = [
-    [34, 206, '#115293', '800+', 'PERSONAS'],
-    [194, 206, '#00B0F0', '6', 'MICROSOFT PARTNER'],
-    [34, 294, '#7030A0', '8', 'AGENTES HQ'],
-    [194, 294, '#D70A8A', '2029', 'SEDE DAT ALIERTA'],
-  ];
-  for (const [x, y, bg, big, sub] of tiles) {
-    ctx.fillStyle = bg;
-    ctx.fillRect(x, y, 148, 76);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '800 26px Poppins, Segoe UI, sans-serif';
-    ctx.fillText(big, x + 12, y + 38);
-    ctx.font = '600 10px Poppins, Segoe UI, sans-serif';
-    ctx.fillText(sub, x + 12, y + 58);
-  }
-
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  ctx.font = '500 12px Poppins, Segoe UI, sans-serif';
-  ctx.fillText('www.integratecnologia.es · Prototipo hackathon', 34, h - 32);
+  ctx.fillStyle = '#0B2A5B';
+  ctx.font = '700 58px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('Calatayud, 1986', 26, 75);
+  ctx.font = '500 38px Poppins, Segoe UI, sans-serif';
+  ctx.fillText('Izquierdo Informática', 26, 135);
 }
 
 export function drawDagWhiteboard(
@@ -611,12 +557,11 @@ export function drawRetroPcScreen(ctx: CanvasRenderingContext2D, phase: number):
 
   ctx.fillStyle = '#53FF8C';
   ctx.font = '700 16px IBM Plex Mono, monospace';
-  ctx.fillText('INTEGRA · 1986', 16, 36);
+  ctx.fillText('IZQUIERDO INFORMÁTICA', 16, 36);
   ctx.font = '500 12px IBM Plex Mono, monospace';
-  ctx.fillText('CALATAYUD -> ZARAGOZA', 16, 62);
-  ctx.fillText('40 ANIVERSARIO HQ', 16, 84);
+  ctx.fillText('CALATAYUD, 1986', 16, 62);
   const cursor = phase % 2 === 0 ? '█' : '';
-  ctx.fillText(`C:\\INTEGRA> RUN 2029 ${cursor}`, 16, 122);
+  ctx.fillText(`A:\\> ${cursor}`, 16, 122);
 }
 
 export function drawAcademyScreen(

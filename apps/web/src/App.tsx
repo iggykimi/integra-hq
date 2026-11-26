@@ -222,9 +222,7 @@ export function App() {
                 activity: 'academy',
                 state: 'collaborating',
                 holdingProp: 'tablet',
-                bubbleText: prev.includesTraining
-                  ? 'Preparando el aula práctica de formación para el equipo Nortia…'
-                  : 'Academia Integra lista (formación opcional no activada en el alcance).',
+                bubbleText: 'En el aula',
               },
             },
           }));
@@ -235,7 +233,7 @@ export function App() {
             const next = !prev.coffeeBreakActive;
             setLiveAnnouncement(
               next
-                ? 'Pausa café activa en Rincón Café, Lounge y Terraza.'
+                ? 'Pausa en el rincón café.'
                 : 'Fin de pausa café: agentes regresan a sus puestos.'
             );
             return { ...prev, coffeeBreakActive: next, meetingActive: false };
