@@ -43,10 +43,15 @@ Incluye documentación, catálogo de recursos con enlaces, checklist de licencia
 | `06_PROTOTIPO_OFFLINE` | Replay visual original y autocontenido |
 | `07_CONTRATOS` | JSON Schema (8 agentes y entregables), fixtures sintéticos y tipos TypeScript |
 | `08_RECURSOS` | Catálogo CSV, instrucciones de adquisición, control de licencias |
-| `scripts` | Validador automático de contratos, DAG, eventos, fixtures y enlaces (`validate-dossier.mjs`) |
+| `spikes/renderer-ab` | Spike comparativo de 1 escritorio: Candidato A (2D isométrico) vs Candidato B (3D R3F) |
+| `scripts` | Validador de contratos (`validate-dossier.mjs`) y demo CLI mock/live (`demo-luna-plan.mjs`) |
 
 La propuesta de organización de la empresa agéntica está en `04_AGENTES/02_ESQUEMA_EMPRESA_AGENTICA.md`; la investigación de mercado, Ignite 2026, protocolos (MCP/A2A/AG-UI), regulación (EU AI Act/AESIA) y modelos, en `01_INVESTIGACION/05_EMPRESA_AGENTICA_2026.md`. El kit de marca (logos, tokens y muestra visual) está en `08_RECURSOS/brand/`.
 
-Para verificar la integridad del dossier y los contratos en local (requiere Node LTS, sin dependencias): `node scripts/validate-dossier.mjs`.
+## Comprobaciones y demos rápidas en local
+
+- Validar integridad del dossier, esquemas, DAG y fixtures (sin dependencias): `node scripts/validate-dossier.mjs`
+- Demo CLI de planificación y cálculos deterministas (`mock`, o `--live` con Azure OpenAI `gpt-6-luna` en `.env`): `node scripts/demo-luna-plan.mjs`
+- Spike visual comparativo A vs B (1 escritorio en 2D isométrico vs 3D React Three Fiber): `cd spikes/renderer-ab && pnpm install && pnpm dev`
 
 La fecha de revisión de las fuentes es 26 de noviembre de 2026. Los enlaces pueden cambiar. Se distingue entre información publicada, propuestas de diseño e hipótesis técnicas no probadas.
