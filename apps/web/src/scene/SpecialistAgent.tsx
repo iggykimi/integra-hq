@@ -1,4 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  BookOpen,
+  ChatCircleDots,
+  CheckCircle,
+  Coffee,
+  Desktop,
+  GearSix,
+  PhoneCall,
+  Sun,
+  UsersThree,
+  WarningCircle,
+} from '@phosphor-icons/react';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -21,6 +33,7 @@ interface SpecialistAgentProps {
   agent: AgentRuntimeState;
   ambient?: AmbientAgentOverride;
   selected: boolean;
+  isWideView?: boolean;
   bubbleMode: BubbleVisibilityMode;
   reducedMotion: boolean;
   checkpoint: PendingCheckpoint | null;
@@ -185,6 +198,7 @@ export function SpecialistAgent({
   agent,
   ambient,
   selected,
+  isWideView = false,
   bubbleMode,
   reducedMotion,
   checkpoint,
@@ -320,20 +334,32 @@ export function SpecialistAgent({
       rightEyeGroupRef.current.scale.y = blinkScale;
     }
 
-    // Animated speaking mouth during meetings, social banter, or active waiting
+    // Animated speaking mouth during meetings, social banter, phone booth calls, or active waiting
     if (mouthRef.current) {
       const speaking =
         !reducedMotion &&
         !moving &&
-        (effectiveActivity === 'boardroom' || poseHint === 'chat' || agent.state === 'waiting');
+        (effectiveActivity === 'boardroom' ||
+          effectiveActivity === 'phone_booth' ||
+          effectiveActivity === 'lounge_sofa' ||
+          effectiveActivity === 'lounge_chair' ||
+          poseHint === 'chat' ||
+          poseHint === 'call' ||
+          agent.state === 'waiting');
       mouthRef.current.scale.y = speaking ? 1.0 + Math.abs(Math.sin(t * 7.5 + seed)) * 1.45 : 1.0;
     }
 
-    // Pelvis height (seated on chair cushion vs standing + walk stride bounce)
+    // Pelvis height (seated on chair / lounge cushion / bleachers vs standing + walk stride bounce)
     if (hipsRef.current) {
       const bounce = moving && !reducedMotion ? Math.abs(Math.sin(walkCycle)) * 0.04 : 0;
       const breath = !moving && !reducedMotion ? Math.sin(t * 2.0 + seed) * 0.006 : 0;
-      const targetY = (standing ? 0.72 : 0.49) + bounce + breath;
+      const seatedY =
+        effectiveActivity === 'auditorium'
+          ? 0.56
+          : effectiveActivity === 'lounge_sofa' || effectiveActivity === 'lounge_chair'
+            ? 0.45
+            : 0.49;
+      const targetY = (standing ? 0.72 : seatedY) + bounce + breath;
       hipsRef.current.position.y = THREE.MathUtils.lerp(hipsRef.current.position.y, targetY, lerpRate);
     }
 
@@ -395,9 +421,15 @@ export function SpecialistAgent({
         } else if (effectiveActivity === 'boardroom' || poseHint === 'chat') {
           hy = Math.sin(t * 1.2 + seed) * 0.3;
           hx = Math.sin(t * 2.4 + seed) * 0.07;
-        } else if (effectiveActivity === 'window_view') {
+        } else if (effectiveActivity === 'terrace') {
           hy = Math.sin(t * 0.7 + seed) * 0.38;
           hx = 0.06;
+        } else if (effectiveActivity === 'phone_booth' || poseHint === 'call') {
+          hy = Math.sin(t * 1.6 + seed) * 0.14;
+          hx = Math.sin(t * 2.8 + seed) * 0.08;
+        } else if (effectiveActivity === 'academy' || effectiveActivity === 'auditorium') {
+          hy = Math.sin(t * 0.9 + seed) * 0.22;
+          hx = 0.09;
         } else if (effectiveActivity === 'retro_pc') {
           hy = Math.sin(t * 1.1 + seed) * 0.16;
           hx = -0.14;
@@ -433,6 +465,15 @@ export function SpecialistAgent({
           effectiveProp !== 'none' ? 0.85 : 0.26,
           0.35
         );
+      } else if (poseHint === 'call' || effectiveActivity === 'phone_booth') {
+        // Private call inside Acoustic Phone Booth: right hand raised holding phone to ear
+        const talkGesture = reducedMotion ? 0 : Math.sin(t * 2.4 + seed) * 0.16;
+        leftShoulderRef.current.rotation.x = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.x, 0.38 + talkGesture, lerpRate);
+        rightShoulderRef.current.rotation.x = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.x, 1.38, lerpRate);
+        leftShoulderRef.current.rotation.z = THREE.MathUtils.lerp(leftShoulderRef.current.rotation.z, 0.1, lerpRate);
+        rightShoulderRef.current.rotation.z = THREE.MathUtils.lerp(rightShoulderRef.current.rotation.z, 0.14, lerpRate);
+        leftForearmRef.current.rotation.x = THREE.MathUtils.lerp(leftForearmRef.current.rotation.x, 0.74, lerpRate);
+        rightForearmRef.current.rotation.x = THREE.MathUtils.lerp(rightForearmRef.current.rotation.x, 1.48, lerpRate);
       } else if (poseHint === 'stretch') {
         // Relaxed shoulder stretch looking out the DAT Alierta panoramic window!
         const lift = reducedMotion ? 0.6 : 0.45 + Math.max(0, Math.sin(t * 0.8 + seed)) * 1.4;
@@ -528,18 +569,68 @@ export function SpecialistAgent({
     ((checkpoint?.kind === 'scope_question' && profile.id === 'director') ||
       (checkpoint?.kind === 'offer_approval' && (profile.id === 'offers' || profile.id === 'director')));
 
-  const showBubble =
+  const hasRichActivity =
+    isWalking ||
+    isAmbientActive ||
+    agent.state === 'working' ||
+    agent.state === 'planning' ||
+    agent.state === 'collaborating' ||
+    agent.state === 'waiting' ||
+    agent.state === 'error' ||
+    effectiveActivity !== 'desk';
+
+  const forceFullBubble =
+    selected ||
+    hovered ||
+    isCheckpointOwner ||
+    agent.state === 'waiting' ||
+    agent.state === 'error';
+
+  const showFullBubble =
     bubbleMode === 'all' ||
-    (bubbleMode === 'smart' &&
-      (selected ||
-        hovered ||
-        isWalking ||
-        isAmbientActive ||
-        isCheckpointOwner ||
-        agent.state === 'working' ||
-        agent.state === 'waiting' ||
-        agent.state === 'error' ||
-        effectiveActivity !== 'desk'));
+    (bubbleMode === 'smart' && (forceFullBubble || (!isWideView && hasRichActivity)));
+
+  // In wide views (Oficina / Campus), show crisp iconic Sims/Two Point Campus pills
+  // instead of overlapping 224px cards; clicking or hovering expands immediately!
+  const showIconPill =
+    !showFullBubble &&
+    bubbleMode === 'smart' &&
+    isWideView &&
+    (hasRichActivity || agent.state === 'completed');
+
+  const shortFirstName = profile.displayName.split('·')[0].trim();
+
+  const renderActivityIcon = () => {
+    const size = 14;
+    if (agent.state === 'error' || agent.state === 'waiting') {
+      return <WarningCircle size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'coffee' || effectiveProp === 'coffee') {
+      return <Coffee size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'terrace') {
+      return <Sun size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'phone_booth' || poseHint === 'call') {
+      return <PhoneCall size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'lounge_sofa' || effectiveActivity === 'lounge_chair' || poseHint === 'chat') {
+      return <ChatCircleDots size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'academy' || effectiveActivity === 'auditorium') {
+      return <BookOpen size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'retro_pc') {
+      return <Desktop size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (effectiveActivity === 'boardroom' || agent.state === 'collaborating') {
+      return <UsersThree size={size} weight="fill" aria-hidden="true" />;
+    }
+    if (agent.state === 'completed') {
+      return <CheckCircle size={size} weight="fill" aria-hidden="true" />;
+    }
+    return <GearSix size={size} weight="fill" aria-hidden="true" />;
+  };
 
   return (
     <group
@@ -784,6 +875,14 @@ export function SpecialistAgent({
                 </group>
               )}
 
+              {/* Held Prop: Matte smartphone during Acoustic Phone Booth calls */}
+              {(poseHint === 'call' || effectiveActivity === 'phone_booth') && effectiveProp === 'none' && (
+                <mesh position={[0.01, -0.23, -0.05]} rotation={[0.25, 0.2, 0]}>
+                  <boxGeometry args={[0.055, 0.11, 0.012]} />
+                  <meshStandardMaterial color="#182633" roughness={0.35} />
+                </mesh>
+              )}
+
               {/* Held Prop: Sleek Surface Tablet */}
               {effectiveProp === 'tablet' && (
                 <group position={[-0.04, -0.24, -0.055]} rotation={[0.6, 0, 0]}>
@@ -960,8 +1059,8 @@ export function SpecialistAgent({
         </mesh>
       )}
 
-      {/* 3D In-World Speech Bubble (visually distinguishes active LLM work vs. ambient idle life) */}
-      {showBubble ? (
+      {/* 3D In-World Speech Bubble / Iconic Badge (cleans wide views; expands on select/hover/zoom) */}
+      {showFullBubble ? (
         <Html
           position={[0, isWalking || !seatedAtEndRef.current ? 2.28 : 2.04, 0]}
           center
@@ -988,6 +1087,31 @@ export function SpecialistAgent({
             </div>
             <p className="agent-bubble-text">{effectiveBubbleText}</p>
           </div>
+        </Html>
+      ) : showIconPill ? (
+        <Html
+          position={[0, isWalking || !seatedAtEndRef.current ? 2.08 : 1.88, 0]}
+          center
+          zIndexRange={[6, 0]}
+        >
+          <button
+            type="button"
+            className={`agent-icon-pill${isAmbientActive ? ' is-ambient' : ''}`}
+            style={{
+              borderColor: isAmbientActive ? '#8FA2B2' : meta.color,
+              color: isAmbientActive ? '#4F6578' : meta.color,
+            }}
+            title={`${profile.displayName}: ${effectiveBubbleText}`}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(profile.id);
+            }}
+          >
+            <span className="agent-icon-badge">{renderActivityIcon()}</span>
+            <span className="agent-icon-name">{shortFirstName}</span>
+          </button>
         </Html>
       ) : (
         <Html position={[0, 1.78, 0]} center zIndexRange={[4, 0]}>

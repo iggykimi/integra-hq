@@ -6,6 +6,7 @@ import {
   OrthographicCamera,
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Bloom, EffectComposer } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { AgentId } from '@contracts/types';
@@ -22,7 +23,7 @@ import type { AmbientSimMap } from '../state/useOfficeLifeSim';
 import { CampusExterior } from './CampusExterior';
 import { DataFlowPulses } from './DataFlowPulses';
 import { preloadKenneyModels } from './KenneyModel';
-import { OfficeArchitecture } from './OfficeArchitecture';
+import { type LandmarkId, OfficeArchitecture } from './OfficeArchitecture';
 import {
   type BubbleVisibilityMode,
   SpecialistAgent,
@@ -48,9 +49,7 @@ interface OfficeCanvasProps {
   showPulses: boolean;
   reducedMotion: boolean;
   onSelectAgent: (id: AgentId | null) => void;
-  onInteractLandmark: (
-    landmark: 'reception_mail' | 'retro_pc' | 'whiteboard' | 'boardroom' | 'coffee' | 'printer' | 'arch_board' | 'slides_tv'
-  ) => void;
+  onInteractLandmark: (landmark: LandmarkId) => void;
   onMetrics: (metrics: ViewportMetrics) => void;
 }
 
@@ -72,7 +71,7 @@ const MOOD_LIGHTING: Record<
     hemiSky: '#FFFDF8',
     hemiGround: '#8FA1AD',
     hemiIntensity: 0.92,
-    sunPos: [14, 20, 10],
+    sunPos: [22, 26, 16],
     sunColor: '#FFF9ED',
     sunIntensity: 1.55,
     envIntensity: 0.55,
@@ -82,7 +81,7 @@ const MOOD_LIGHTING: Record<
     hemiSky: '#FFE5C2',
     hemiGround: '#756D78',
     hemiIntensity: 0.72,
-    sunPos: [19, 10, 6],
+    sunPos: [28, 13, 8],
     sunColor: '#FFBA7A',
     sunIntensity: 1.85,
     envIntensity: 0.42,
@@ -91,8 +90,8 @@ const MOOD_LIGHTING: Record<
     bg: '#0E1C2E',
     hemiSky: '#3A5A82',
     hemiGround: '#101B28',
-    hemiIntensity: 0.42,
-    sunPos: [12, 18, 12],
+    hemiIntensity: 0.44,
+    sunPos: [16, 22, 16],
     sunColor: '#8FB9E8',
     sunIntensity: 0.48,
     envIntensity: 0.22,
@@ -146,9 +145,9 @@ function CameraRig({
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
   const animatingRef = useRef(false);
-  const goalPos = useRef(new THREE.Vector3(22, 18.5, 22));
-  const goalTarget = useRef(new THREE.Vector3(0, 0.55, 0.2));
-  const goalZoom = useRef(52);
+  const goalPos = useRef(new THREE.Vector3(31, 25, 31));
+  const goalTarget = useRef(new THREE.Vector3(0.6, 0.2, 0.1));
+  const goalZoom = useRef(38);
 
   useEffect(() => {
     const preset = CAMERA_PRESETS.find((p) => p.id === presetId) ?? CAMERA_PRESETS[0];
@@ -195,8 +194,8 @@ function CameraRig({
       makeDefault
       enableDamping={!reducedMotion}
       dampingFactor={0.08}
-      minZoom={24}
-      maxZoom={160}
+      minZoom={18}
+      maxZoom={165}
       maxPolarAngle={Math.PI / 2.12}
       minPolarAngle={Math.PI / 7}
       onStart={() => {
@@ -225,7 +224,10 @@ export function OfficeCanvas({
   const agentPositionsRef = useRef<Partial<Record<AgentId, Vec2>>>({});
   const [pulsePositions, setPulsePositions] = useState<Partial<Record<AgentId, Vec2>>>({});
 
-  const ambientCoffeeActive = Object.values(ambientMap).some((v) => v?.activity === 'coffee');
+  const ambientCoffeeActive = Object.values(ambientMap).some(
+    (v) => v?.activity === 'coffee' || v?.activity === 'lounge_sofa' || v?.activity === 'lounge_chair'
+  );
+  const isWideView = !followSelected && (cameraPreset === 'overview' || cameraPreset === 'campus');
 
   const handlePositionReport = useCallback((id: AgentId, pos: Vec2) => {
     agentPositionsRef.current[id] = pos;
@@ -239,7 +241,7 @@ export function OfficeCanvas({
   return (
     <div
       className="viewport-canvas-wrap"
-      aria-label="Escena 3D interactiva de Integra HQ DAT Alierta 2029 con 8 agentes en 5 zonas"
+      aria-label="Escena 3D interactiva de Integra HQ DAT Alierta 2029 con sede 28x20m y 8 agentes"
     >
       <Canvas
         shadows
@@ -248,13 +250,14 @@ export function OfficeCanvas({
         onPointerMissed={() => onSelectAgent(null)}
       >
         <color attach="background" args={[light.bg]} />
+        <fog attach="fog" args={[light.bg, 95, 168]} />
 
         <OrthographicCamera
           makeDefault
-          position={[22, 18.5, 22]}
-          zoom={52}
+          position={[31, 25, 31]}
+          zoom={38}
           near={0.1}
-          far={180}
+          far={240}
         />
 
         {/* Real Poly Haven CC0 studio HDRI for subtle PBR glass & metal reflections */}
@@ -274,21 +277,21 @@ export function OfficeCanvas({
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-left={-26}
-          shadow-camera-right={26}
-          shadow-camera-top={22}
-          shadow-camera-bottom={-22}
+          shadow-camera-left={-38}
+          shadow-camera-right={38}
+          shadow-camera-top={30}
+          shadow-camera-bottom={-30}
           shadow-camera-near={1}
-          shadow-camera-far={75}
+          shadow-camera-far={95}
           shadow-bias={-0.0004}
         />
 
-        {/* Subtle accent interior lights in Evening/Night mode */}
+        {/* Subtle accent interior lights in Evening/Night mode (capped at 3 for GPU smoothness) */}
         {mood === 'night' && (
           <>
-            <pointLight position={[0, 2.7, -3.7]} color="#90D6F7" intensity={1.8} distance={7.5} decay={2} />
-            <pointLight position={[-6.8, 2.6, 3.3]} color="#C8ECFF" intensity={1.6} distance={7} decay={2} />
-            <pointLight position={[6.3, 2.5, -3.2]} color="#FFD699" intensity={2.2} distance={8} decay={2} />
+            <pointLight position={[-1.2, 2.9, -5.8]} color="#90D6F7" intensity={2.2} distance={11} decay={2} />
+            <pointLight position={[-9.2, 2.8, 4.2]} color="#C8ECFF" intensity={2.0} distance={11} decay={2} />
+            <pointLight position={[11.0, 2.8, -5.0]} color="#FFD699" intensity={2.5} distance={11} decay={2} />
           </>
         )}
 
@@ -318,6 +321,7 @@ export function OfficeCanvas({
               agent={scene.agents[id]}
               ambient={ambientMap[id]}
               selected={selectedAgent === id}
+              isWideView={isWideView}
               bubbleMode={bubbleMode}
               reducedMotion={reducedMotion}
               checkpoint={scene.checkpoint}
@@ -334,12 +338,15 @@ export function OfficeCanvas({
           />
         </Suspense>
 
+        {/* Baked 1-frame contact shadow for crisp grounding at 60fps without rebake stalls */}
         <ContactShadows
-          position={[0, 0.014, 0]}
-          opacity={mood === 'night' ? 0.45 : 0.28}
-          scale={22}
-          blur={1.8}
-          far={4}
+          frames={1}
+          resolution={512}
+          position={[0, 0.015, 0]}
+          opacity={0.28}
+          scale={36}
+          blur={1.7}
+          far={4.5}
         />
 
         <CameraRig
@@ -350,6 +357,15 @@ export function OfficeCanvas({
           agentPositionsRef={agentPositionsRef}
           reducedMotion={reducedMotion}
         />
+
+        <EffectComposer multisampling={0}>
+          <Bloom
+            mipmapBlur
+            luminanceThreshold={1.08}
+            intensity={mood === 'night' ? 0.42 : mood === 'golden' ? 0.22 : 0.1}
+            radius={0.62}
+          />
+        </EffectComposer>
 
         <MetricsProbe onMetrics={onMetrics} />
       </Canvas>

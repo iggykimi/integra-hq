@@ -24,6 +24,7 @@ import {
   WarningCircle,
 } from '@phosphor-icons/react';
 import type { AgentId, AgentState } from '@contracts/types';
+import type { LandmarkId } from './scene/OfficeArchitecture';
 import {
   OfficeCanvas,
   type ViewportMetrics,
@@ -84,7 +85,7 @@ export function App() {
     [eventCursor, overrides]
   );
 
-  const ambientMap = useOfficeLifeSim(ambientLife, reducedMotion, scene, ambientTrigger);
+  const ambientMap = useOfficeLifeSim(ambientLife, reducedMotion, mood, scene, ambientTrigger);
 
   // Playback engine that naturally pauses at human checkpoints (events #3 and #21)
   useEffect(() => {
@@ -154,17 +155,7 @@ export function App() {
   );
 
   const handleInteractLandmark = useCallback(
-    (
-      landmark:
-        | 'reception_mail'
-        | 'retro_pc'
-        | 'whiteboard'
-        | 'boardroom'
-        | 'coffee'
-        | 'printer'
-        | 'arch_board'
-        | 'slides_tv'
-    ) => {
+    (landmark: LandmarkId) => {
       switch (landmark) {
         case 'retro_pc':
           heritageDialogRef.current?.showModal();
@@ -210,17 +201,99 @@ export function App() {
           });
           jumpCamera('boardroom');
           break;
+        case 'academy':
+          jumpCamera('academy');
+          setSelectedAgent('consultant');
+          setActiveTab('inspector');
+          setOverrides((prev) => ({
+            ...prev,
+            meetingActive: false,
+            coffeeBreakActive: false,
+            agentOverrides: {
+              ...prev.agentOverrides,
+              consultant: {
+                activity: 'academy',
+                state: 'collaborating',
+                holdingProp: 'tablet',
+                bubbleText: prev.includesTraining
+                  ? 'Preparando el aula práctica de formación para el equipo Nortia…'
+                  : 'Academia Integra lista (formación opcional no activada en el alcance).',
+              },
+            },
+          }));
+          setLiveAnnouncement('Cámara enfocada en Academia Integra · Formación.');
+          break;
         case 'coffee':
           setOverrides((prev) => {
             const next = !prev.coffeeBreakActive;
             setLiveAnnouncement(
               next
-                ? 'Pausa café activa en Rincón IntegraTalks.'
+                ? 'Pausa café activa en Rincón Café, Lounge y Terraza.'
                 : 'Fin de pausa café: agentes regresan a sus puestos.'
             );
             return { ...prev, coffeeBreakActive: next, meetingActive: false };
           });
           jumpCamera('cafe');
+          break;
+        case 'terrace':
+          jumpCamera('terrace');
+          setSelectedAgent('director');
+          setActiveTab('inspector');
+          setOverrides((prev) => ({
+            ...prev,
+            meetingActive: false,
+            coffeeBreakActive: false,
+            agentOverrides: {
+              ...prev.agentOverrides,
+              director: {
+                activity: 'terrace',
+                state: 'idle',
+                holdingProp: 'coffee',
+                bubbleText: 'Respirando aire fresco bajo la pérgola cerámica mirando al DAT Alierta…',
+              },
+            },
+          }));
+          setLiveAnnouncement('Cámara enfocada en la Terraza Exterior bajo la pérgola.');
+          break;
+        case 'phone_booth':
+          jumpCamera('commercial');
+          setSelectedAgent('crm');
+          setActiveTab('inspector');
+          setOverrides((prev) => ({
+            ...prev,
+            meetingActive: false,
+            coffeeBreakActive: false,
+            agentOverrides: {
+              ...prev.agentOverrides,
+              crm: {
+                activity: 'phone_booth',
+                state: 'collaborating',
+                holdingProp: 'none',
+                bubbleText: 'Llamada de seguimiento con Nortia Industrial en cabina acústica…',
+              },
+            },
+          }));
+          setLiveAnnouncement('Cámara enfocada en las cabinas acústicas de Comercial.');
+          break;
+        case 'auditorium':
+          jumpCamera('reception');
+          setSelectedAgent('designer');
+          setActiveTab('inspector');
+          setOverrides((prev) => ({
+            ...prev,
+            meetingActive: false,
+            coffeeBreakActive: false,
+            agentOverrides: {
+              ...prev.agentOverrides,
+              designer: {
+                activity: 'auditorium',
+                state: 'collaborating',
+                holdingProp: 'tablet',
+                bubbleText: 'Ensayando la demo ejecutiva en la grada de roble IntegraTalks…',
+              },
+            },
+          }));
+          setLiveAnnouncement('Cámara enfocada en la Grada IntegraTalks.');
           break;
         case 'printer':
           jumpCamera('commercial');
@@ -380,7 +453,7 @@ export function App() {
           <div>
             <h1 className="brand-heading">Integra HQ · DAT Alierta 2029</h1>
             <span className="brand-subtitle">
-              {scene.projectTitle} · 5 zonas · 8 especialistas digitales
+              {scene.projectTitle} · Sede 28×20 m · 8 especialistas digitales
             </span>
           </div>
         </div>
@@ -984,14 +1057,56 @@ export function App() {
                       className="btn sm"
                       onClick={() =>
                         commandAgent(inspectedId, {
-                          activity: 'window_view',
+                          activity: 'terrace',
                           state: 'idle',
                           holdingProp: 'coffee',
-                          bubbleText: 'Estirando piernas junto a los ventanales del DAT Alierta…',
+                          bubbleText: 'Saliendo a la terraza cerámica exterior a tomar el aire…',
                         })
                       }
                     >
-                      Mirar campus
+                      Salir a Terraza
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        commandAgent(inspectedId, {
+                          activity: 'phone_booth',
+                          state: 'collaborating',
+                          holdingProp: 'none',
+                          bubbleText: 'Llamada privada con cliente en cabina acústica…',
+                        })
+                      }
+                    >
+                      Cabina acústica
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        commandAgent(inspectedId, {
+                          activity: 'academy',
+                          state: 'collaborating',
+                          holdingProp: 'tablet',
+                          bubbleText: 'Revisando temario en Academia Integra…',
+                        })
+                      }
+                    >
+                      Ir a Academia
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        commandAgent(inspectedId, {
+                          activity: 'auditorium',
+                          state: 'collaborating',
+                          holdingProp: 'tablet',
+                          bubbleText: 'Sentado en la grada IntegraTalks preparando demo…',
+                        })
+                      }
+                    >
+                      Grada IntegraTalks
                     </button>
                     <button
                       type="button"

@@ -196,6 +196,131 @@ function SingleWorkstation({
           />
         )}
 
+        {/* Role-specific department desk props for distinct specialist storytelling */}
+        {profile.id === 'designer' && (
+          <group>
+            {/* Pen display / graphic drawing tablet + Integra cyan stylus */}
+            <mesh position={[-0.54, 0.773, 0.14]} rotation={[0, 0.14, 0]} castShadow>
+              <boxGeometry args={[0.26, 0.012, 0.19]} />
+              <meshStandardMaterial color="#1E2B37" roughness={0.35} />
+            </mesh>
+            <mesh position={[-0.45, 0.783, 0.16]} rotation={[0, 0.55, Math.PI / 2]}>
+              <cylinderGeometry args={[0.006, 0.005, 0.15, 8]} />
+              <meshStandardMaterial color="#00B0F0" roughness={0.3} />
+            </mesh>
+            {/* Brand palette swatch stand (Integra Navy, Cyan, Purple, Pink) */}
+            <group position={[0.62, 0.81, -0.02]} rotation={[0, -0.35, 0]}>
+              {['#0B2A5B', '#00B0F0', '#7030A0', '#D70A8A'].map((col, idx) => (
+                <mesh
+                  key={col}
+                  position={[idx * 0.022 - 0.03, 0, idx * 0.005]}
+                  rotation={[0, 0, -0.18 + idx * 0.12]}
+                >
+                  <boxGeometry args={[0.036, 0.09, 0.006]} />
+                  <meshStandardMaterial color={col} roughness={0.45} />
+                </mesh>
+              ))}
+            </group>
+            <KenneyModel name="books" position={[-0.64, 0.765, -0.24]} scale={0.78} />
+          </group>
+        )}
+
+        {profile.id === 'architect' && (
+          <group>
+            {/* Secondary open engineering laptop + dark Fabric notebook */}
+            <KenneyModel
+              name="laptop"
+              position={[0.56, 0.765, -0.04]}
+              rotation={[0, -0.52, 0]}
+              scale={0.62}
+            />
+            <mesh position={[-0.56, 0.774, 0.04]} rotation={[0, 0.18, 0]} castShadow>
+              <boxGeometry args={[0.19, 0.016, 0.24]} />
+              <meshStandardMaterial color="#0F2640" roughness={0.55} />
+            </mesh>
+            <mesh position={[-0.53, 0.786, 0.04]} rotation={[0, 0.35, Math.PI / 2]}>
+              <cylinderGeometry args={[0.006, 0.006, 0.15, 8]} />
+              <meshStandardMaterial color="#43C6F0" />
+            </mesh>
+          </group>
+        )}
+
+        {(profile.id === 'crm' || profile.id === 'offers') && (
+          <group>
+            {/* Corporate VoIP desk phone + commercial dossier binders */}
+            <group position={[0.58, 0.768, -0.1]} rotation={[0, -0.32, 0]}>
+              <mesh position={[0, 0.035, 0]} rotation={[-0.35, 0, 0]} castShadow>
+                <boxGeometry args={[0.17, 0.06, 0.16]} />
+                <meshStandardMaterial color="#253543" roughness={0.42} />
+              </mesh>
+              <mesh position={[-0.055, 0.068, 0]} rotation={[0, 0, 0.1]} castShadow>
+                <boxGeometry args={[0.045, 0.028, 0.17]} />
+                <meshStandardMaterial color="#18242F" roughness={0.38} />
+              </mesh>
+            </group>
+            <mesh position={[-0.58, 0.78, -0.02]} rotation={[0, 0.12, 0]} castShadow>
+              <boxGeometry args={[0.2, 0.028, 0.27]} />
+              <meshStandardMaterial
+                color={profile.id === 'offers' ? '#D5A13D' : '#115293'}
+                roughness={0.5}
+              />
+            </mesh>
+          </group>
+        )}
+
+        {profile.id === 'consultant' && (
+          <group>
+            {/* Discovery playbook stack + angled tablet stand */}
+            <KenneyModel name="books" position={[-0.6, 0.765, -0.04]} scale={0.82} />
+            <mesh position={[0.56, 0.835, 0.02]} rotation={[-0.38, -0.35, 0]} castShadow>
+              <boxGeometry args={[0.19, 0.14, 0.014]} />
+              <meshStandardMaterial color="#1B2B3A" roughness={0.35} />
+            </mesh>
+          </group>
+        )}
+
+        {(profile.id === 'delivery' || profile.id === 'billing') && (
+          <group>
+            {/* Two-tier operational inbox tray with crisp sheets & colored tabs */}
+            <group position={[0.58, 0.768, -0.08]} rotation={[0, -0.22, 0]}>
+              <mesh position={[0, 0.012, 0]} castShadow>
+                <boxGeometry args={[0.24, 0.018, 0.31]} />
+                <meshStandardMaterial color="#384958" roughness={0.48} />
+              </mesh>
+              <mesh position={[0, 0.028, 0]}>
+                <boxGeometry args={[0.21, 0.014, 0.27]} />
+                <meshStandardMaterial color="#FFFFFF" roughness={0.6} />
+              </mesh>
+              <mesh position={[0, 0.072, 0]} castShadow>
+                <boxGeometry args={[0.24, 0.018, 0.31]} />
+                <meshStandardMaterial color="#384958" roughness={0.48} />
+              </mesh>
+              <mesh position={[0, 0.088, 0]}>
+                <boxGeometry args={[0.21, 0.014, 0.27]} />
+                <meshStandardMaterial
+                  color={profile.id === 'billing' ? '#115293' : '#36966C'}
+                  roughness={0.5}
+                />
+              </mesh>
+            </group>
+          </group>
+        )}
+
+        {isDirector && (
+          <group>
+            {/* Executive desk organizer + strategy dossier on L-corner return */}
+            <mesh position={[0.72, 0.81, -0.08]} castShadow>
+              <cylinderGeometry args={[0.042, 0.046, 0.09, 12]} />
+              <meshStandardMaterial color="#1B2A38" metalness={0.45} roughness={0.35} />
+            </mesh>
+            <mesh position={[0.72, 0.86, -0.08]} rotation={[0.18, 0, 0.2]}>
+              <cylinderGeometry args={[0.006, 0.005, 0.12, 6]} />
+              <meshStandardMaterial color="#D5A13D" metalness={0.6} roughness={0.3} />
+            </mesh>
+            <KenneyModel name="books" position={[-0.78, 0.765, 0.02]} scale={0.9} />
+          </group>
+        )}
+
         {/* Deliverable Folder Stack that scales in when artifacts are created */}
         <group ref={binderRef} position={[deskWidth * 0.35, 0.77, 0.16]}>
           <mesh position={[0, 0.016, 0]} castShadow>
