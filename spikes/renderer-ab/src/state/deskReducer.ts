@@ -20,8 +20,11 @@ export interface DeskSceneState {
   roleLabel: string;
   zoneLabel: string;
   jacketColor: string;
+  hairColor: string;
+  hasGlasses: boolean;
   state: DeskVisualState;
   taskTitle: string;
+  commentSteps: string[];
   tools: string[];
   sources: string[];
   artifacts: string[];
@@ -84,7 +87,10 @@ export const ROLE_PRESETS: Record<
     roleLabel: string;
     zoneLabel: string;
     jacketColor: string;
+    hairColor: string;
+    hasGlasses: boolean;
     defaultTask: string;
+    workingComments: string[];
     tools: string[];
     sources: string[];
     artifact: string;
@@ -94,7 +100,14 @@ export const ROLE_PRESETS: Record<
     roleLabel: 'Ofertas · Comercial',
     zoneLabel: 'Zona Comercial',
     jacketColor: '#115293',
+    hairColor: '#3B2B22',
+    hasGlasses: true,
     defaultTask: 'Generar borrador de oferta DOCX/PDF con bandas del catálogo',
+    workingComments: [
+      'Consultando bandas aprobadas en CATALOG-SYNTH-2026…',
+      'Cruzando alcance + fase de formación (42.000 € – 58.000 €)…',
+      'Maquetando oferta-nortia-borrador.docx (marca BORRADOR)…',
+    ],
     tools: ['read_catalog', 'build_offer'],
     sources: ['CATALOG-SYNTH-2026', 'OFFER-INTEGRA-01', 'STYLE-01'],
     artifact: 'oferta-nortia-borrador.docx (BORRADOR)',
@@ -103,7 +116,14 @@ export const ROLE_PRESETS: Record<
     roleLabel: 'Data & AI · Arquitectura',
     zoneLabel: 'Zona Soluciones',
     jacketColor: '#1D6B7E',
+    hairColor: '#25211F',
+    hasGlasses: true,
     defaultTask: 'Diseñar arquitectura Microsoft Fabric y renderizar SVG sanitizado',
+    workingComments: [
+      'Revisando fuentes MS-FABRIC-01 y MS-POWERBI-01…',
+      'Validando grafo de solución (máx. 10 nodos, sin ciclos)…',
+      'Generando diagrama determinista architecture-nortia.svg…',
+    ],
     tools: ['search_knowledge', 'generate_architecture'],
     sources: ['MS-FABRIC-01', 'MS-POWERBI-01', 'INT-PUBLIC-02'],
     artifact: 'architecture-nortia.svg',
@@ -112,7 +132,14 @@ export const ROLE_PRESETS: Record<
     roleLabel: 'Consultoría · Negocio',
     zoneLabel: 'Zona Soluciones',
     jacketColor: '#3B6E5C',
+    hairColor: '#5B3E2B',
+    hasGlasses: false,
     defaultTask: 'Extraer requisitos funcionales, riesgos, supuestos y fases',
+    workingComments: [
+      'Separando necesidades explícitas e inferidas del cliente…',
+      'Contrastando fases con DEMO-METHOD-01…',
+      'Registrando supuestos y preguntas abiertas en briefing.json…',
+    ],
     tools: ['search_knowledge'],
     sources: ['INT-PUBLIC-01', 'DEMO-METHOD-01'],
     artifact: 'briefing.json (interno)',
@@ -121,7 +148,14 @@ export const ROLE_PRESETS: Record<
     roleLabel: 'CRM · Comercial',
     zoneLabel: 'Zona Comercial',
     jacketColor: '#485A7A',
+    hairColor: '#463529',
+    hasGlasses: false,
     defaultTask: 'Leer cuenta Nortia Industrial y calcular días sin contacto en código',
+    workingComments: [
+      'Leyendo cuenta ACC-NORTIA-001 (solo lectura, as_of 26/11)…',
+      'Calculando en código: OPP-01 activa (8d) · OPP-02 estancada (67d)…',
+      'Consolidando account_brief.json con referencias de actividad…',
+    ],
     tools: ['read_crm', 'search_knowledge'],
     sources: ['CRM-FIXTURE-2026', 'CRM-ACC-NORTIA-001'],
     artifact: 'account_brief.json (interno)',
@@ -158,13 +192,27 @@ export function buildManualDeskState(
           ? 'Validación rechazada: tarifa fuera de catálogo aprobado'
           : preset.defaultTask;
 
+  const commentSteps =
+    state === 'idle'
+      ? ['Disponible · esperando asignación del Director.']
+      : state === 'working'
+        ? preset.workingComments
+        : state === 'waiting'
+          ? ['Oferta BORRADOR lista (42.000 € – 58.000 €). Requiere tu aprobación.']
+          : state === 'completed'
+            ? [`Entregable verificado: ${preset.artifact}`]
+            : ['Bloqueado: tarifa fuera de catálogo aprobado. Sin envío externo.'];
+
   return {
     roleId,
     roleLabel: preset.roleLabel,
     zoneLabel: preset.zoneLabel,
     jacketColor: preset.jacketColor,
+    hairColor: preset.hairColor,
+    hasGlasses: preset.hasGlasses,
     state,
     taskTitle,
+    commentSteps,
     tools: state === 'idle' ? [] : preset.tools,
     sources: state === 'idle' ? [] : preset.sources,
     artifacts,
@@ -268,8 +316,11 @@ export function reduceEventsToDeskState(
     roleLabel: preset.roleLabel,
     zoneLabel: preset.zoneLabel,
     jacketColor: preset.jacketColor,
+    hairColor: preset.hairColor,
+    hasGlasses: preset.hasGlasses,
     state,
     taskTitle,
+    commentSteps: [taskTitle],
     tools: tools.size > 0 ? [...tools] : preset.tools,
     sources: sources.size > 0 ? [...sources] : preset.sources,
     artifacts,

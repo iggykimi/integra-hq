@@ -38,6 +38,7 @@ export function App() {
   );
   const [pixelatedA, setPixelatedA] = useState<boolean>(false);
   const [orbitB, setOrbitB] = useState<boolean>(false);
+  const [showCommentsB, setShowCommentsB] = useState<boolean>(true);
   const [sideTab, setSideTab] = useState<SideTab>('inspector');
   const [metricsA, setMetricsA] = useState<RendererMetrics>({
     fps: 0,
@@ -309,22 +310,42 @@ export function App() {
                       Diorama low-poly + CanvasTexture en monitores · listo para GLB CC0/CC BY
                     </span>
                   </div>
-                  <label style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <input
-                      type="checkbox"
-                      checked={orbitB}
-                      onChange={(e) => setOrbitB(e.target.checked)}
-                    />
-                    Permitir órbita
-                  </label>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <label style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <input
+                        type="checkbox"
+                        checked={showCommentsB}
+                        onChange={(e) => setShowCommentsB(e.target.checked)}
+                      />
+                      Comentarios 3D
+                    </label>
+                    <label style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <input
+                        type="checkbox"
+                        checked={orbitB}
+                        onChange={(e) => setOrbitB(e.target.checked)}
+                      />
+                      Permitir órbita
+                    </label>
+                  </div>
                 </div>
 
                 <Renderer3DR3F
                   scene={scene}
                   allowOrbit={orbitB}
+                  showComments={showCommentsB}
                   onSelect={() => {
                     setSelected(true);
                     setSideTab('inspector');
+                  }}
+                  onQuickAction={(action) => {
+                    if (controlSource === 'manual') {
+                      setManualState(action === 'approve' ? 'completed' : 'working');
+                    } else if (action === 'approve') {
+                      setEventIdx((prev) => Math.min(MOCK_EVENTS.length, Math.max(prev + 2, 24)));
+                    } else {
+                      setEventIdx(18);
+                    }
                   }}
                   onMetrics={setMetricsB}
                 />
