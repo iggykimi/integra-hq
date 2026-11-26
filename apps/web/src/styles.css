@@ -801,6 +801,12 @@ code,
   box-shadow: 0 0 0 2px var(--integra-cyan), 0 8px 20px rgba(11, 42, 91, 0.24);
 }
 
+.agent-bubble.is-ambient {
+  background: rgba(248, 250, 252, 0.94);
+  border-style: dashed;
+  border-top-style: solid;
+}
+
 .agent-bubble-head {
   display: flex;
   align-items: center;

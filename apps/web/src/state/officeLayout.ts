@@ -11,6 +11,7 @@ export type ZoneId =
 
 export type CameraPresetId =
   | 'overview'
+  | 'campus'
   | 'reception'
   | 'director'
   | 'boardroom'
@@ -29,7 +30,10 @@ export type AgentActivity =
   | 'lounge'
   | 'printer'
   | 'arch_board'
-  | 'slides_tv';
+  | 'slides_tv'
+  | 'window_view'
+  | 'retro_pc'
+  | 'garden_chat';
 
 export type HairStyle = 'short' | 'bob' | 'ponytail' | 'curly' | 'bun' | 'fade' | 'sidepart';
 
@@ -190,11 +194,19 @@ export const ZONE_META: Record<
 export const CAMERA_PRESETS: CameraPreset[] = [
   {
     id: 'overview',
-    label: 'Vista General · DAT Alierta',
-    shortLabel: 'General',
+    label: 'Vista General · Oficina 3D',
+    shortLabel: 'Oficina',
     position: [22, 18.5, 22],
-    target: [0, 0.55, 0.35],
-    zoom: 58,
+    target: [0, 0.45, 0.2],
+    zoom: 52,
+  },
+  {
+    id: 'campus',
+    label: 'Campus DAT Alierta · Exterior',
+    shortLabel: 'Campus',
+    position: [30, 22.5, 30],
+    target: [0, -0.9, -2.0],
+    zoom: 33,
   },
   {
     id: 'reception',
@@ -309,6 +321,21 @@ export const LANDMARK_WAYPOINTS: Record<
     pos: { x: 6.7, z: 1.95 },
     yaw: 0, // faces -Z toward 6-slide presentation screen on north divider
     entry: { x: 4.9, z: 0.45 },
+  },
+  window_view: {
+    pos: { x: 7.45, z: -5.35 },
+    yaw: 0, // faces -Z out the panoramic terracotta louver glass toward DAT Alierta campus!
+    entry: { x: 4.6, z: -0.2 },
+  },
+  retro_pc: {
+    pos: { x: -6.95, z: 5.0 },
+    yaw: Math.PI / 2.6, // faces 1986 Retro PC plinth
+    entry: { x: -5.2, z: 0.4 },
+  },
+  garden_chat: {
+    pos: { x: -7.1, z: 0.25 },
+    yaw: Math.PI / 2, // faces the biophilic vertical garden on West wall
+    entry: { x: -5.2, z: 0.25 },
   },
 };
 

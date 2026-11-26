@@ -17,6 +17,7 @@ import {
   SkipBack,
   SkipForward,
   SlidersHorizontal,
+  Sparkle,
   Sun,
   SunHorizon,
   UsersThree,
@@ -43,6 +44,7 @@ import {
   reduceOfficeSceneState,
   type SceneOverrides,
 } from './state/officeReducer';
+import { useOfficeLifeSim } from './state/useOfficeLifeSim';
 
 type SideTabId = 'project' | 'inspector' | 'events' | 'scene';
 
@@ -64,6 +66,8 @@ export function App() {
   const [followSelected, setFollowSelected] = useState<boolean>(false);
   const [bubbleMode, setBubbleMode] = useState<BubbleVisibilityMode>('smart');
   const [showPulses, setShowPulses] = useState<boolean>(true);
+  const [ambientLife, setAmbientLife] = useState<boolean>(true);
+  const [ambientTrigger, setAmbientTrigger] = useState<number>(0);
   const [overrides, setOverrides] = useState<SceneOverrides>(INITIAL_OVERRIDES);
   const [metrics, setMetrics] = useState<ViewportMetrics>({ fps: 60, frameMs: 16.6 });
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
@@ -79,6 +83,8 @@ export function App() {
     () => reduceOfficeSceneState(MOCK_EVENTS, eventCursor, overrides),
     [eventCursor, overrides]
   );
+
+  const ambientMap = useOfficeLifeSim(ambientLife, reducedMotion, scene, ambientTrigger);
 
   // Playback engine that naturally pauses at human checkpoints (events #3 and #21)
   useEffect(() => {
@@ -400,6 +406,7 @@ export function App() {
           <div className="stage-viewport">
             <OfficeCanvas
               scene={scene}
+              ambientMap={ambientMap}
               mood={mood}
               cameraPreset={cameraPreset}
               cameraTrigger={cameraTrigger}
@@ -481,6 +488,20 @@ export function App() {
 
               <div className="hud-group">
                 <div className={`hud-strip${isDarkHud ? ' dark-mood' : ''}`}>
+                  <button
+                    type="button"
+                    className={`hud-btn${ambientLife ? ' active' : ''}`}
+                    onClick={() => {
+                      setAmbientLife((prev) => {
+                        const next = !prev;
+                        if (next) setAmbientTrigger((n) => n + 1);
+                        return next;
+                      });
+                    }}
+                  >
+                    <Sparkle size={15} weight="regular" aria-hidden="true" />
+                    {ambientLife ? 'Vida sim: ON' : 'Vida sim: OFF'}
+                  </button>
                   <button
                     type="button"
                     className={`hud-btn${bubbleMode !== 'none' ? ' active' : ''}`}
@@ -963,6 +984,34 @@ export function App() {
                       className="btn sm"
                       onClick={() =>
                         commandAgent(inspectedId, {
+                          activity: 'window_view',
+                          state: 'idle',
+                          holdingProp: 'coffee',
+                          bubbleText: 'Estirando piernas junto a los ventanales del DAT Alierta…',
+                        })
+                      }
+                    >
+                      Mirar campus
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        commandAgent(inspectedId, {
+                          activity: 'retro_pc',
+                          state: 'idle',
+                          holdingProp: 'none',
+                          bubbleText: 'Curioseando el PC retro 1986 en Recepción…',
+                        })
+                      }
+                    >
+                      Ver PC 1986
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() =>
+                        commandAgent(inspectedId, {
                           activity: 'desk',
                           state: 'error',
                           holdingProp: 'none',
@@ -1105,8 +1154,10 @@ export function App() {
 
                 <div className="callout-note">
                   <strong>Assets 3D y licencias auditadas:</strong>
-                  <br />• 34 piezas GLB de mobiliario:{' '}
+                  <br />• 34 muebles GLB:{' '}
                   <strong>Kenney Furniture Kit 2.0 (CC0)</strong>
+                  <br />• 16 piezas exteriores GLB (árboles, vehículos, pabellones):{' '}
+                  <strong>Kenney Nature / Car / City Kits (CC0)</strong>
                   <br />• Suelo roble PBR y mapa IBL HDRI:{' '}
                   <strong>Poly Haven (CC0)</strong>
                   <br />• Logotipo vectorial oficial:{' '}
