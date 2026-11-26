@@ -24,6 +24,7 @@ import {
 interface OfficeArchitectureProps {
   scene: OfficeSceneState;
   mood: LightingMood;
+  coffeeActiveOverride?: boolean;
   reducedMotion: boolean;
   onInteractLandmark: (
     landmark: 'reception_mail' | 'retro_pc' | 'whiteboard' | 'boardroom' | 'coffee' | 'printer' | 'arch_board' | 'slides_tv'
@@ -122,71 +123,10 @@ function VerticalGardenWall({ position }: { position: [number, number, number] }
   );
 }
 
-/**
- * Exterior Zaragoza / DAT Alierta terrace outside the north panoramic glass wall
- * featuring IDOM's signature slim lampposts and Mediterranean trees.
- */
-function ExteriorTerrace({ mood }: { mood: LightingMood }) {
-  const lampGlow = mood === 'night' ? 1.5 : mood === 'golden' ? 0.65 : 0.0;
-  return (
-    <group position={[0, 0, -7.45]}>
-      {/* Architectural stone promenade strip */}
-      <mesh position={[0, -0.14, 0]} receiveShadow>
-        <boxGeometry args={[18.6, 0.18, 1.75]} />
-        <meshStandardMaterial color="#D7D9D5" roughness={0.88} />
-      </mesh>
-      {/* Low Zaragoza grass & gravel planter strip */}
-      <mesh position={[0, -0.02, -0.48]} receiveShadow>
-        <boxGeometry args={[17.8, 0.12, 0.72]} />
-        <meshStandardMaterial color="#7C8E5E" roughness={0.95} />
-      </mesh>
-
-      {/* Stylized Mediterranean birch / olive trees outside the louvers */}
-      {[-6.8, -1.8, 3.6, 7.6].map((tx, idx) => (
-        <group key={tx} position={[tx, 0, -0.45]}>
-          <mesh position={[0, 0.9, 0]} castShadow>
-            <cylinderGeometry args={[0.06, 0.09, 1.8, 8]} />
-            <meshStandardMaterial color="#7B6A58" roughness={0.9} />
-          </mesh>
-          <mesh position={[0, 2.05 + (idx % 2) * 0.2, 0]} castShadow>
-            <dodecahedronGeometry args={[0.72, 1]} />
-            <meshStandardMaterial color={idx % 2 === 0 ? '#6C8A5C' : '#7B9966'} roughness={0.88} />
-          </mesh>
-          <mesh position={[0.35, 1.78, 0.18]} castShadow>
-            <dodecahedronGeometry args={[0.45, 1]} />
-            <meshStandardMaterial color="#85A26E" roughness={0.88} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Slim angled lampposts directly inspired by IDOM's DAT Alierta render */}
-      {[-4.5, 1.2, 6.0].map((lx) => (
-        <group key={lx} position={[lx, 0, -0.12]}>
-          <mesh position={[0, 1.55, 0]} castShadow>
-            <cylinderGeometry args={[0.032, 0.038, 3.1, 8]} />
-            <meshStandardMaterial color="#2C363F" roughness={0.45} metalness={0.5} />
-          </mesh>
-          <mesh position={[0.22, 3.18, 0]} rotation={[0, 0, -0.55]}>
-            <boxGeometry args={[0.62, 0.045, 0.07]} />
-            <meshStandardMaterial color="#2C363F" roughness={0.45} metalness={0.5} />
-          </mesh>
-          <mesh position={[0.34, 3.24, 0]}>
-            <boxGeometry args={[0.24, 0.03, 0.08]} />
-            <meshStandardMaterial
-              color="#FFF4D4"
-              emissive="#FFE3A1"
-              emissiveIntensity={lampGlow}
-            />
-          </mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
 export function OfficeArchitecture({
   scene,
   mood,
+  coffeeActiveOverride = false,
   reducedMotion,
   onInteractLandmark,
 }: OfficeArchitectureProps) {
@@ -472,8 +412,7 @@ export function OfficeArchitecture({
         ))}
       </group>
 
-      {/* Exterior DAT Alierta Zaragoza Terrace */}
-      <ExteriorTerrace mood={mood} />
+      {/* Full DAT Alierta Campus Exterior is rendered by CampusExterior.tsx */}
 
       {/* ==================== WEST ARCHITECTURAL SPINE WALL (X = -9.0) ==================== */}
       <group position={[-9.0, 0, 0]}>
@@ -954,7 +893,10 @@ export function OfficeArchitecture({
             </Html>
           )}
         </group>
-        <CoffeeSteamCluster active={scene.coffeeBrewing} reducedMotion={reducedMotion} />
+        <CoffeeSteamCluster
+          active={scene.coffeeBrewing || coffeeActiveOverride}
+          reducedMotion={reducedMotion}
+        />
 
         {/* Lounge Rug + L-Sofa + Armchair + Glass Coffee Table + Warm Floor Lamp (all Kenney CC0) */}
         <KenneyModel

@@ -6,6 +6,14 @@ export type MaterialPaletteOverrides = Partial<
   Record<
     | 'wood'
     | 'woodDark'
+    | 'woodBark'
+    | 'woodBarkDark'
+    | 'woodBirch'
+    | 'leafsGreen'
+    | 'leafsDark'
+    | 'leafsFall'
+    | 'grass'
+    | 'dirt'
     | 'metal'
     | 'metalDark'
     | 'metalMedium'
@@ -17,6 +25,7 @@ export type MaterialPaletteOverrides = Partial<
     | 'plant'
     | 'lamp'
     | 'glass'
+    | 'colormap'
     | '_defaultMat',
     {
       color: string;
@@ -32,11 +41,19 @@ export type MaterialPaletteOverrides = Partial<
 
 /**
  * Default Integra DAT Alierta 2029 architectural material harmonization for
- * Kenney Furniture Kit 2.0 (CC0) GLB models.
+ * Kenney CC0 GLB models (Furniture Kit, Nature Kit, Car Kit, City Kit).
  */
 const BASE_INTEGRA_PALETTE: MaterialPaletteOverrides = {
   wood: { color: '#DCC7A6', roughness: 0.72, metalness: 0.02 },
   woodDark: { color: '#9E7B5A', roughness: 0.74, metalness: 0.04 },
+  woodBark: { color: '#7C6552', roughness: 0.9, metalness: 0.0 },
+  woodBarkDark: { color: '#614E40', roughness: 0.92, metalness: 0.0 },
+  woodBirch: { color: '#CFC4B2', roughness: 0.85, metalness: 0.0 },
+  leafsGreen: { color: '#6A8B5B', roughness: 0.86, metalness: 0.0 },
+  leafsDark: { color: '#4E7047', roughness: 0.86, metalness: 0.0 },
+  leafsFall: { color: '#C79458', roughness: 0.86, metalness: 0.0 },
+  grass: { color: '#7D9762', roughness: 0.92, metalness: 0.0 },
+  dirt: { color: '#9A8B7A', roughness: 0.94, metalness: 0.0 },
   metal: { color: '#C6D1DA', roughness: 0.36, metalness: 0.45 },
   metalLight: { color: '#E8EEF2', roughness: 0.32, metalness: 0.32 },
   metalMedium: { color: '#4E606E', roughness: 0.42, metalness: 0.42 },
@@ -58,11 +75,13 @@ const BASE_INTEGRA_PALETTE: MaterialPaletteOverrides = {
 };
 
 export interface KenneyModelProps {
+  /** Model filename without `.glb`, e.g. `desk` or `ext/tree_detailed` */
   name: string;
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number | [number, number, number];
   palette?: MaterialPaletteOverrides;
+  preserveTexture?: boolean;
   castShadow?: boolean;
   receiveShadow?: boolean;
   onClick?: (e: { stopPropagation: () => void }) => void;
@@ -71,9 +90,10 @@ export interface KenneyModelProps {
 }
 
 /**
- * Renders any curated Kenney Furniture Kit 2.0 (CC0) GLB asset from
- * `/assets/models/<name>.glb`, automatically centering X/Z and grounding
- * min.y = 0 so every chair, desk, plant, and prop sits flush on the floor or surface.
+ * Renders any curated Kenney CC0 GLB asset from `/assets/models/<name>.glb`,
+ * automatically centering X/Z and grounding min.y = 0.
+ * Preserves embedded colormap textures automatically (e.g., Car Kit / City Kit)
+ * while harmonizing untextured materials into Integra's palette.
  */
 export function KenneyModel({
   name,
@@ -81,6 +101,7 @@ export function KenneyModel({
   rotation = [0, 0, 0],
   scale = 2,
   palette,
+  preserveTexture = false,
   castShadow = true,
   receiveShadow = true,
   onClick,
@@ -88,14 +109,12 @@ export function KenneyModel({
   onPointerOut,
 }: KenneyModelProps) {
   const { scene } = useGLTF(`/assets/models/${name}.glb`);
-
   const paletteKey = palette ? JSON.stringify(palette) : '';
 
   const normalized = useMemo(() => {
     const root = new THREE.Group();
     const cloned = scene.clone(true);
 
-    // Harmonize materials into Integra DAT Alierta palette
     cloned.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.castShadow = castShadow;
@@ -103,12 +122,22 @@ export function KenneyModel({
         const origMat = obj.material as THREE.MeshStandardMaterial | THREE.MeshStandardMaterial[];
         const applyStyle = (m: THREE.Material): THREE.Material => {
           const matName = m.name as keyof MaterialPaletteOverrides;
+          const std = m instanceof THREE.MeshStandardMaterial ? m : null;
           const override = palette?.[matName] ?? BASE_INTEGRA_PALETTE[matName];
+
+          // Preserve embedded colormap atlas textures unless explicitly overridden
+          if ((preserveTexture || std?.map) && !palette?.[matName]) {
+            const clonedMat = m.clone() as THREE.MeshStandardMaterial;
+            clonedMat.roughness = Math.max(0.45, clonedMat.roughness ?? 0.65);
+            return clonedMat;
+          }
+
           const next = new THREE.MeshStandardMaterial({
             name: m.name,
-            color: override?.color ?? (m instanceof THREE.MeshStandardMaterial ? m.color : '#D8E0E6'),
-            roughness: override?.roughness ?? 0.65,
-            metalness: override?.metalness ?? 0.08,
+            map: std?.map && preserveTexture ? std.map : null,
+            color: override?.color ?? (std ? std.color : '#D8E0E6'),
+            roughness: override?.roughness ?? 0.68,
+            metalness: override?.metalness ?? 0.06,
             transparent: override?.transparent ?? false,
             opacity: override?.opacity ?? 1,
           });
@@ -122,7 +151,6 @@ export function KenneyModel({
       }
     });
 
-    // Compute exact bounding box and center X/Z with bottom resting flush at Y = 0
     const box = new THREE.Box3().setFromObject(cloned);
     if (!box.isEmpty()) {
       const center = new THREE.Vector3();
@@ -133,7 +161,7 @@ export function KenneyModel({
     root.add(cloned);
     return root;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scene, castShadow, receiveShadow, paletteKey]);
+  }, [scene, castShadow, receiveShadow, preserveTexture, paletteKey]);
 
   const scaleVec: [number, number, number] =
     typeof scale === 'number' ? [scale, scale, scale] : scale;
@@ -187,6 +215,22 @@ const PRELOAD_MODELS = [
   'trashcan',
   'rugRounded',
   'sideTableDrawers',
+  'ext/tree_detailed',
+  'ext/tree_oak',
+  'ext/tree_plateau',
+  'ext/tree_tall',
+  'ext/tree_default_fall',
+  'ext/plant_bushDetailed',
+  'ext/plant_bushLarge',
+  'ext/grass_large',
+  'ext/rock_smallA',
+  'ext/flower_yellowA',
+  'ext-cars/sedan',
+  'ext-cars/suv-luxury',
+  'ext-cars/hatchback-sports',
+  'ext-city/low-detail-building-a',
+  'ext-city/low-detail-building-b',
+  'ext-city/low-detail-building-d',
 ];
 
 export function preloadKenneyModels(): void {

@@ -179,15 +179,6 @@ function SingleWorkstation({
             },
           }}
         />
-        {mood !== 'day' && (
-          <pointLight
-            position={[-deskWidth * 0.36, 1.15, -deskDepth * 0.1]}
-            color="#FFD79A"
-            intensity={mood === 'night' ? 1.05 : 0.4}
-            distance={2.8}
-            decay={2}
-          />
-        )}
 
         {/* Integra Navy Coffee Mug on desk */}
         <mesh position={[-deskWidth * 0.38, 0.815, 0.18]} castShadow>

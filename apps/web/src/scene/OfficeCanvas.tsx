@@ -18,6 +18,8 @@ import {
   type Vec2,
 } from '../state/officeLayout';
 import type { OfficeSceneState } from '../state/officeReducer';
+import type { AmbientSimMap } from '../state/useOfficeLifeSim';
+import { CampusExterior } from './CampusExterior';
 import { DataFlowPulses } from './DataFlowPulses';
 import { preloadKenneyModels } from './KenneyModel';
 import { OfficeArchitecture } from './OfficeArchitecture';
@@ -36,6 +38,7 @@ export interface ViewportMetrics {
 
 interface OfficeCanvasProps {
   scene: OfficeSceneState;
+  ambientMap: AmbientSimMap;
   mood: LightingMood;
   cameraPreset: CameraPresetId;
   cameraTrigger: number;
@@ -192,9 +195,9 @@ function CameraRig({
       makeDefault
       enableDamping={!reducedMotion}
       dampingFactor={0.08}
-      minZoom={34}
-      maxZoom={155}
-      maxPolarAngle={Math.PI / 2.15}
+      minZoom={24}
+      maxZoom={160}
+      maxPolarAngle={Math.PI / 2.12}
       minPolarAngle={Math.PI / 7}
       onStart={() => {
         animatingRef.current = false;
@@ -205,6 +208,7 @@ function CameraRig({
 
 export function OfficeCanvas({
   scene,
+  ambientMap,
   mood,
   cameraPreset,
   cameraTrigger,
@@ -220,6 +224,8 @@ export function OfficeCanvas({
   const light = MOOD_LIGHTING[mood];
   const agentPositionsRef = useRef<Partial<Record<AgentId, Vec2>>>({});
   const [pulsePositions, setPulsePositions] = useState<Partial<Record<AgentId, Vec2>>>({});
+
+  const ambientCoffeeActive = Object.values(ambientMap).some((v) => v?.activity === 'coffee');
 
   const handlePositionReport = useCallback((id: AgentId, pos: Vec2) => {
     agentPositionsRef.current[id] = pos;
@@ -246,9 +252,9 @@ export function OfficeCanvas({
         <OrthographicCamera
           makeDefault
           position={[22, 18.5, 22]}
-          zoom={58}
+          zoom={52}
           near={0.1}
-          far={120}
+          far={180}
         />
 
         {/* Real Poly Haven CC0 studio HDRI for subtle PBR glass & metal reflections */}
@@ -268,12 +274,12 @@ export function OfficeCanvas({
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-left={-13}
-          shadow-camera-right={13}
-          shadow-camera-top={11}
-          shadow-camera-bottom={-11}
+          shadow-camera-left={-26}
+          shadow-camera-right={26}
+          shadow-camera-top={22}
+          shadow-camera-bottom={-22}
           shadow-camera-near={1}
-          shadow-camera-far={55}
+          shadow-camera-far={75}
           shadow-bias={-0.0004}
         />
 
@@ -287,9 +293,12 @@ export function OfficeCanvas({
         )}
 
         <Suspense fallback={null}>
+          <CampusExterior mood={mood} reducedMotion={reducedMotion} />
+
           <OfficeArchitecture
             scene={scene}
             mood={mood}
+            coffeeActiveOverride={ambientCoffeeActive}
             reducedMotion={reducedMotion}
             onInteractLandmark={onInteractLandmark}
           />
@@ -307,6 +316,7 @@ export function OfficeCanvas({
               key={id}
               profile={AGENT_PROFILES[id]}
               agent={scene.agents[id]}
+              ambient={ambientMap[id]}
               selected={selectedAgent === id}
               bubbleMode={bubbleMode}
               reducedMotion={reducedMotion}
